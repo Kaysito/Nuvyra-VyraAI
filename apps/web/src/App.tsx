@@ -12,7 +12,7 @@ export function App() {
   const [pulseComplete, setPulseComplete] = useState(false);
   const navigate = (nextPage: Page) => {
     setPage(nextPage);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
   const finishPulse = (result: ProfileResult) => { setProfile(result); setPulseComplete(true); navigate("Aprende"); };
 

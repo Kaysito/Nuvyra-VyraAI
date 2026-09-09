@@ -18,6 +18,8 @@ Rama: `feat/responsive-user-experience`. Objetivo de la entrega: una base que Da
 
 El selector ofrece Sistema, Claro y Oscuro. Guarda la preferencia localmente, escucha cambios del sistema y resuelve el tema antes del primer render. Si el almacenamiento está bloqueado, sigue funcionando durante la sesión. El script inicial debe coordinarse con la política CSP al desplegar (hash o script externo permitido).
 
+El control de apariencia es un grupo de botones con iconos SVG, etiquetas y estado `aria-pressed`; una cápsula animada indica la selección. El panel de escritorio se pliega a una columna de iconos, conserva nombres accesibles y muestra etiquetas al enfocar o pasar el cursor. Su estado se guarda localmente. En móvil se mantiene la navegación inferior. Ambos controles funcionan con teclado y respetan movimiento reducido.
+
 El vidrio usa superficies de alta opacidad: medir el contraste sobre el fondo compuesto, no únicamente sobre el color nominal. El blur es decorativo; la lectura debe funcionar sin él. No usar rojo/verde como única indicación: conservar signos y textos. El modo oscuro es una preferencia, no una garantía de comodidad para todas las personas.
 
 ## Movimiento y teclado

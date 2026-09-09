@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ThemeControl } from "./ThemeControl";
 
 export type Page = "Inicio" | "Pulso" | "Aprende" | "Practica" | "Mercado" | "Portafolio" | "Perfil";
@@ -12,6 +12,14 @@ export function AppShell({ page, onNavigate, profile, children }: {
   page: Page; onNavigate: (page: Page) => void;
   profile: { experience: string }; children: ReactNode;
 }) {
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem("nuvyra.sidebar") === "collapsed"; } catch { return false; }
+  });
+  const toggleSidebar = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try { localStorage.setItem("nuvyra.sidebar", next ? "collapsed" : "expanded"); } catch { /* Session-only preference. */ }
+  };
   const main = useRef<HTMLElement>(null);
   const previousPage = useRef(page);
   useEffect(() => {
@@ -22,17 +30,25 @@ export function AppShell({ page, onNavigate, profile, children }: {
     document.title = `${page} · Nuvyra`;
   }, [page]);
 
-  return <div className="app-shell">
+  return <div className={`app-shell${collapsed ? " sidebar-collapsed" : ""}`}>
     <a className="skip-link" href="#main-content">Saltar al contenido</a>
     <aside className="sidebar glass-sidebar">
+      <button className="sidebar-toggle" onClick={toggleSidebar} aria-expanded={!collapsed}
+        aria-controls="desktop-navigation" aria-label={collapsed ? "Expandir panel lateral" : "Plegar panel lateral"}
+        title={collapsed ? "Expandir panel lateral" : "Plegar panel lateral"}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16m7-12-3 4 3 4" />
+        </svg>
+      </button>
       <button className="brand-button" onClick={() => onNavigate("Inicio")} aria-label="Nuvyra, inicio">
         <img src="/brand/nuvyra-mark.svg" alt="" />
         <span><b>NUVYRA</b><small>BETA · 0.1</small></span>
       </button>
-      <nav aria-label="Navegación principal">
+      <nav id="desktop-navigation" aria-label="Navegación principal">
         {navigation.map(item => <button key={item.label} aria-current={page === item.label ? "page" : undefined}
+          aria-label={item.label} title={collapsed ? item.label : undefined}
           className={page === item.label ? "active" : ""} onClick={() => onNavigate(item.label)}>
-          <span className="nav-icon" aria-hidden="true">{item.icon}</span>{item.label}
+          <span className="nav-icon" aria-hidden="true">{item.icon}</span><span className="nav-label">{item.label}</span>
           {item.label === "Practica" && <small>SIM</small>}
         </button>)}
       </nav>

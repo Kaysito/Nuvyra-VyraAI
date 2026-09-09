@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nuvyra.Application\Nuvyra.Application.csproj" />
+    <ProjectReference Include="..\Nuvyra.Infrastructure\Nuvyra.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nuvyra.Contracts\Nuvyra.Contracts.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

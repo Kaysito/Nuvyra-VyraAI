@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nuvyra.Api/Nuvyra.Api.csproj" />
+    <Project Path="src/Nuvyra.Application/Nuvyra.Application.csproj" />
+    <Project Path="src/Nuvyra.Contracts/Nuvyra.Contracts.csproj" />
+    <Project Path="src/Nuvyra.Domain/Nuvyra.Domain.csproj" />
+    <Project Path="src/Nuvyra.Infrastructure/Nuvyra.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nuvyra.UnitTests/Nuvyra.UnitTests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,32 @@
+name: Funcionalidad
+description: Proponer una mejora concreta para Nuvyra
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema que resuelve
+      description: Describe la necesidad del usuario, no una tecnología.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      placeholder: "- [ ] ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área principal
+      options: [Web, API, Dominio financiero, Datos, IA responsable, DevOps, Documentación]
+    validations:
+      required: true

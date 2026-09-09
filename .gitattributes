@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.slnx text eol=crlf
+*.cs text diff=csharp
+*.svg text
+*.png binary
+*.jpg binary
+*.webp binary

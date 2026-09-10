@@ -19,14 +19,14 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     public ProfileResponse Assess(ProfileAssessmentRequest request)
     {
         if (!Enum.TryParse<ExperienceLevel>(request.Experience, true, out var experience) ||
-            !Enum.TryParse<RiskTolerance>(request.RiskDisposition, true, out var risk) ||
+            !Enum.TryParse<RiskDisposition>(request.RiskDisposition, true, out var risk) ||
             !Enum.TryParse<InvestmentHorizon>(request.Horizon, true, out var horizon) ||
             !Enum.TryParse<InvestmentObjective>(request.Objective, true, out var objective) ||
             !Enum.TryParse<PressureResponse>(request.PressureResponse, true, out var pressure))
             throw new ArgumentException("Profile values must use the documented pulse-v1 codes.");
 
         var profile = new InvestorProfile(Guid.NewGuid(), experience, risk, horizon, objective, pressure, true, "pulse-v1", DateTimeOffset.UtcNow);
-        return new(profile.Id, profile.Experience.ToString(), profile.RiskTolerance.ToString(), profile.Horizon.ToString(),
+        return new(profile.Id, profile.Experience.ToString(), profile.RiskDisposition.ToString(), profile.Horizon.ToString(),
             profile.Objective.ToString(), profile.PressureResponse.ToString(), profile.IsProvisional, profile.AssessmentVersion, profile.CreatedAt);
     }
 

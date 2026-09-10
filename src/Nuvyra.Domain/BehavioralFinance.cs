@@ -1,13 +1,13 @@
 namespace Nuvyra.Domain;
 
 public enum ExperienceLevel { Beginner, Intermediate, Advanced }
-public enum RiskTolerance { Conservative, Moderate, Aggressive }
+public enum RiskDisposition { Low, Medium, High }
 public enum DecisionChoice { Wait24Hours, ReviewEvidence, ContinueSale }
 public enum InvestmentHorizon { Short, Medium, Long, Unspecified }
 public enum InvestmentObjective { Preservation, Growth, Income, Unspecified }
 public enum PressureResponse { ActNow, CheckThenAct, PauseAndReview, Unsure }
 
-public sealed record InvestorProfile(Guid Id, ExperienceLevel Experience, RiskTolerance RiskTolerance,
+public sealed record InvestorProfile(Guid Id, ExperienceLevel Experience, RiskDisposition RiskDisposition,
     InvestmentHorizon Horizon, InvestmentObjective Objective, PressureResponse PressureResponse,
     bool IsProvisional, string AssessmentVersion, DateTimeOffset CreatedAt);
 public sealed record MarketQuote(string Symbol, string Name, decimal Price, decimal Change24Hours, int VolatilityScore,

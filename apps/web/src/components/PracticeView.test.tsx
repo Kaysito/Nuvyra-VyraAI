@@ -127,6 +127,6 @@ describe("PracticeView", () => {
     expect(screen.getByRole("button", { name: /ethereum en portafolio/i })).toHaveTextContent("En portafolio");
     expect(screen.getByText("$9,000.00")).toBeInTheDocument();
     expect(screen.getAllByText("−28.0%")).toHaveLength(3);
-    expect(screen.getByRole("button", { name: /simular caída/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /simular caída/i })).not.toBeInTheDocument();
   });
 });

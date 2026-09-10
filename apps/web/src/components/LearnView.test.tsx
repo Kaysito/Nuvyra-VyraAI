@@ -73,8 +73,8 @@ describe("LearnView", () => {
     render(<LearnView onPractice={onPractice} />);
 
     expect(await screen.findByRole("heading", { name: "Volatilidad no significa fracaso." })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/learn/lessons");
-    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/learn/course");
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/learn/lessons", expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/learn/course", expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(screen.getByRole("heading", { name: "Entender el riesgo" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Leer la volatilidad" })).toBeInTheDocument();
     expect(screen.getByText("Registrar una primera decisión virtual.")).toBeInTheDocument();

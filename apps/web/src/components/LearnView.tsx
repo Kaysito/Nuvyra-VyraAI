@@ -1,27 +1,5 @@
 import { useEffect, useState } from "react";
-
-type Lesson = {
-  id: string;
-  title: string;
-  objective: string;
-  scenario: string;
-  explanation: string;
-  question: string;
-  options: string[];
-  feedback: string[];
-  keyLearning: string;
-  estimatedMinutes: number;
-  completionAction: string;
-};
-
-type CourseModule = {
-  id: string;
-  name: string;
-  objective: string;
-  lessonId: string;
-  completionCriterion: string;
-  sandboxAction: string;
-};
+import { apiClient, type CourseModule, type Lesson } from "../services/apiClient";
 
 export function LearnView({ onPractice }: { onPractice: () => void }) {
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -32,8 +10,8 @@ export function LearnView({ onPractice }: { onPractice: () => void }) {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/learn/lessons").then(response => response.json()),
-      fetch("/api/learn/course").then(response => response.json()),
+      apiClient.getLessons(),
+      apiClient.getCourse(),
     ])
       .then(([lessons, modules]) => {
         setLesson(lessons[0] ?? null);

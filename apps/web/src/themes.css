@@ -88,7 +88,7 @@ main:focus { outline: none; }
 button, select, a { touch-action: manipulation; }
 button { min-height: 44px; }
 .brand-button small, .sidebar nav button, .bottom-nav button,
-.legal-note, .privacy-copy, .modal-note, .button.text,
+.legal-note, .privacy-copy, .modal-note,
 .stat-card > span, .stat-card small, .asset-head, .risk-label,
 .reason-list p, .status-pill { color: var(--muted); }
 .legal-note, .privacy-copy, .modal-note { font-size: .8rem; line-height: 1.6; }
@@ -124,7 +124,6 @@ button { min-height: 44px; }
 .modal-close { width: 44px; height: 44px; }
 .native-dialog { color: var(--ink); margin: auto; }
 .native-dialog::backdrop { background: rgba(3, 15, 28, .7); backdrop-filter: blur(6px); }
-.modal-backdrop { padding: 18px; }
 .decision-toast { max-width: calc(100vw - 28px); }
 .decision-toast button { min-width: 44px; }
 .profile-facts div { gap: 16px; flex-wrap: wrap; }
@@ -147,7 +146,7 @@ button { min-height: 44px; }
 @media (max-width: 1050px) {
   .asset-row { grid-template-columns: minmax(0, 1fr) auto; }
   .asset-head { display: none; }
-  .asset-row .row-action { display: inline-flex; justify-content: center; grid-column: 1 / -1; }
+  .asset-row .row-action, .asset-row .row-state { display: inline-flex; justify-content: center; grid-column: 1 / -1; }
   .asset-row .risk-label, .asset-row > span:nth-of-type(1) { display: block; }
   .asset-row .risk-label { text-align: right; }
 }

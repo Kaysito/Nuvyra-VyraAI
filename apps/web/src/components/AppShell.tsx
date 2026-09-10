@@ -55,7 +55,7 @@ export function AppShell({ page, onNavigate, profile, children }: {
       <div className="sidebar-context">
         <p className="micro-label">TU CONTEXTO</p>
         <div><span className="profile-orb" aria-hidden="true">{profile.experience === "En calibración" ? "?" : profile.experience[0]}</span>
-          <span><b>{profile.experience}</b><small>Perfil adaptable</small></span></div>
+          <span><b>{profile.experience}</b><small>{profile.experience === "En calibración" ? "Pulso pendiente" : "Perfil provisional"}</small></span></div>
         <button onClick={() => onNavigate("Perfil")}>Ver perfil <span aria-hidden="true">→</span></button>
       </div>
     </aside>

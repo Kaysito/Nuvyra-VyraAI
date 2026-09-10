@@ -4,15 +4,7 @@ import { LearnView } from "./components/LearnView";
 import { PracticeView } from "./components/PracticeView";
 import { PulseView, type ProfileResult } from "./components/PulseView";
 
-const initialProfile: ProfileResult = {
-  experience: "En calibración",
-  tolerance: "Moderada",
-  horizon: "Sin definir",
-  objective: "Aprender",
-  behavioralRisk: "Medio",
-  behavioralRiskScore: 50,
-  clarity: 0
-};
+const initialProfile: ProfileResult = { experience: "En calibración", tolerance: "Moderada", horizon: "Sin definir", clarity: 38 };
 
 export function App() {
   const [page, setPage] = useState<Page>("Inicio");
@@ -46,11 +38,5 @@ function HomeView({ pulseComplete, profile, onStart, onLearn, onMarket }: { puls
 }
 
 function JourneyCard({number,title,text,action,onClick,featured=false}:{number:string;title:string;text:string;action:string;onClick:()=>void;featured?:boolean}) { return <article className={`journey-card glass-card ${featured?"featured":""}`}><span className="journey-number">{number}</span><h3>{title}</h3><p>{text}</p><button className="text-button" onClick={onClick}>{action} <span>↗</span></button></article>; }
-function ProfileView({profile,onRetake}:{profile:ProfileResult;onRetake:()=>void}) { return <div className="page narrow-page"><header className="page-heading"><p className="overline">PERFIL PROGRESIVO</p><h1>Una referencia que evoluciona contigo.</h1><p>Este resultado orienta el lenguaje y las advertencias. No es un diagnóstico ni una etiqueta permanente.</p></header><section className="profile-grid"><div className="glass-card profile-main"><span className="micro-label">CLARIDAD INICIAL</span><strong className="score">{profile.clarity}<small>/100</small></strong><div className="meter large"><span style={{width:`${profile.clarity}%`}}/></div></div><div className="glass-card profile-facts">
-      <ProfileFact label="Experiencia" value={profile.experience}/>
-      <ProfileFact label="Tolerancia" value={profile.tolerance}/>
-      <ProfileFact label="Horizonte" value={profile.horizon}/>
-      <ProfileFact label="Objetivo" value={profile.objective}/>
-      <ProfileFact label="Riesgo conductual" value={`${profile.behavioralRisk} · ${profile.behavioralRiskScore}/100`}/>
-    </div></section><button className="button secondary" onClick={onRetake}>Recalibrar mi perfil</button></div>; }
+function ProfileView({profile,onRetake}:{profile:ProfileResult;onRetake:()=>void}) { return <div className="page narrow-page"><header className="page-heading"><p className="overline">PERFIL PROGRESIVO</p><h1>Una referencia que evoluciona contigo.</h1><p>Este resultado orienta el lenguaje y las advertencias. No es un diagnóstico ni una etiqueta permanente.</p></header><section className="profile-grid"><div className="glass-card profile-main"><span className="micro-label">CLARIDAD INICIAL</span><strong className="score">{profile.clarity}<small>/100</small></strong><div className="meter large"><span style={{width:`${profile.clarity}%`}}/></div></div><div className="glass-card profile-facts"><ProfileFact label="Experiencia" value={profile.experience}/><ProfileFact label="Tolerancia" value={profile.tolerance}/><ProfileFact label="Horizonte" value={profile.horizon}/></div></section><button className="button secondary" onClick={onRetake}>Recalibrar mi perfil</button></div>; }
 function ProfileFact({label,value}:{label:string;value:string}) { return <div><span>{label}</span><strong>{value}</strong></div>; }

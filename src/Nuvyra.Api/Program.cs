@@ -9,30 +9,35 @@ var app = builder.Build();
 
 app.UseExceptionHandler(error => error.Run(async context =>
 {
-    context.Response.StatusCode = StatusCodes.Status400BadRequest;
-    await context.Response.WriteAsJsonAsync(new { error = "The request could not be completed." });
+    var exception = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+    context.Response.StatusCode = exception switch
+    {
+        KeyNotFoundException => StatusCodes.Status404NotFound,
+        ArgumentException or ArgumentOutOfRangeException => StatusCodes.Status400BadRequest,
+        InvalidOperationException => StatusCodes.Status409Conflict,
+        _ => StatusCodes.Status500InternalServerError
+    };
+    context.Response.ContentType = "application/json";
+    await context.Response.WriteAsJsonAsync(new ApiErrorResponse(
+        exception switch { KeyNotFoundException => "not_found", ArgumentException or ArgumentOutOfRangeException => "validation_error", InvalidOperationException => "business_rule", _ => "internal_error" },
+        context.Response.StatusCode >= 500 ? "The request could not be completed." : exception?.Message ?? "The request could not be completed.",
+        context.TraceIdentifier));
 }));
 app.UseCors();
-
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", product = "Nuvyra", heritage = "KairosAI" }));
 app.MapGet("/api/market/quotes", (INuvyraDemoService service) => service.GetQuotes());
-
-app.MapGet("/api/profiles/pulse", (INuvyraDemoService service) => Results.Ok(service.GetPulse()));
-app.MapPost("/api/profiles/assessment", (ProfileAssessmentRequest request, INuvyraDemoService service) =>
-    Results.Ok(service.Assess(request)));
-
-app.MapGet("/api/learn/lessons", (INuvyraDemoService service) => Results.Ok(service.GetLessons()));
-app.MapGet("/api/learn/course", (INuvyraDemoService service) => Results.Ok(service.GetCourse()));
-
-app.MapPost("/api/behavior/check", (BehaviorCheckRequest request, INuvyraDemoService service) =>
-    Results.Ok(service.CheckBehavior(request)));
-
+app.MapGet("/api/learning/lessons/{id}", (string id, INuvyraDemoService service) => service.GetLesson(id));
+app.MapGet("/api/learn/lessons", (INuvyraDemoService service) => service.GetLessons());
+app.MapGet("/api/learn/course", (INuvyraDemoService service) => service.GetCourse());
+app.MapPost("/api/profiles/assessment", (ProfileAssessmentRequest request, INuvyraDemoService service) => Results.Ok(service.Assess(request)));
 app.MapGet("/api/sandbox/portfolio", (INuvyraDemoService service) => service.GetPortfolio());
 app.MapPost("/api/sandbox/orders", (BuyOrderRequest request, INuvyraDemoService service) => Results.Ok(service.Buy(request)));
+app.MapPost("/api/sandbox/orders/sell", (SellOrderRequest request, INuvyraDemoService service) => Results.Ok(service.Sell(request)));
 app.MapPost("/api/demo/crash", (INuvyraDemoService service) => { service.SimulateCrash(); return Results.NoContent(); });
+app.MapPost("/api/demo/reset", (INuvyraDemoService service) => { service.ResetDemo(); return Results.NoContent(); });
 app.MapPost("/api/decisions/before-sell", (BeforeSellRequest request, INuvyraDemoService service) => Results.Ok(service.BeforeSell(request)));
 app.MapPost("/api/decisions/{id:guid}/choice", (Guid id, DecisionRequest request, INuvyraDemoService service) => Results.Ok(service.RecordDecision(id, request)));
-
+app.MapGet("/api/sandbox/signals", (INuvyraDemoService service) => service.GetBehavioralSignals());
 app.Run();
 
 public partial class Program;

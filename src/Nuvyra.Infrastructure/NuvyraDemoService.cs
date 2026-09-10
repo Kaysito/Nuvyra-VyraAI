@@ -11,6 +11,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     private readonly Dictionary<Guid, DecisionIntervention> _interventions = [];
     private readonly List<BehavioralSignal> _signals = [];
     private readonly IMarketDataProvider _marketData;
+    private bool _crashActive;
 
     public NuvyraDemoService(IMarketDataProvider marketData) => _marketData = marketData;
 
@@ -35,6 +36,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
 
     public PositionResponse Buy(BuyOrderRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
         lock (_gate)
         {
             var quote = Quote(request.Symbol);
@@ -47,6 +49,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
 
     public PositionResponse Sell(SellOrderRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
         lock (_gate)
         {
             var quote = Quote(request.Symbol);
@@ -69,7 +72,11 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     public void SimulateCrash()
     {
         lock (_gate)
+        {
+            if (_crashActive) return;
             _marketData.SimulateCrash();
+            _crashActive = true;
+        }
     }
 
     public void ResetDemo()
@@ -80,6 +87,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             _interventions.Clear();
             _signals.Clear();
             _marketData.Reset();
+            _crashActive = false;
         }
     }
 

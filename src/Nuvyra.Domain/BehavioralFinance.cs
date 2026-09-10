@@ -32,7 +32,7 @@ public sealed class VirtualPortfolio
         ValidateOrder(symbol, amount, price);
         if (amount > Cash) throw new InvalidOperationException("Insufficient virtual cash.");
         var quantity = amount / price;
-        var existing = _positions.SingleOrDefault(position => position.Symbol == symbol);
+        var existing = _positions.SingleOrDefault(position => position.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
         var updated = existing is null
             ? new Position(symbol, quantity, price)
             : new Position(symbol, existing.Quantity + quantity,

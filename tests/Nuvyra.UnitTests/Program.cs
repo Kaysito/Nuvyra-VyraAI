@@ -20,6 +20,56 @@ var checks = new (string Name, Action Run)[]
     {
         var position = new Position("BTC", 1m, 100m);
         Ensure(position.ReturnPercent(72m) == -28m, "Return percentage is incorrect.");
+    }),
+    ("Sell restores cash and reduces a position", () =>
+    {
+        var portfolio = new VirtualPortfolio(10_000m);
+        portfolio.Buy("BTC", 1_000m, 100_000m);
+        var remaining = portfolio.Sell("BTC", 250m, 100_000m);
+        Ensure(portfolio.Cash == 9_250m, "Cash was not restored correctly.");
+        Ensure(remaining.Quantity == 0.0075m, "Position quantity was not reduced correctly.");
+    }),
+    ("Reset restores the original virtual state", () =>
+    {
+        var portfolio = new VirtualPortfolio(10_000m);
+        portfolio.Buy("BTC", 1_000m, 100_000m);
+        portfolio.Reset();
+        Ensure(portfolio.Cash == 10_000m, "Cash was not reset correctly.");
+        Ensure(portfolio.Positions.Count == 0, "Positions were not reset correctly.");
+    }),
+    ("Sell rejects a quantity larger than the position", () =>
+    {
+        var portfolio = new VirtualPortfolio(10_000m);
+        portfolio.Buy("BTC", 1_000m, 100_000m);
+        try { portfolio.Sell("BTC", 1_001m, 100_000m); }
+        catch (InvalidOperationException) { return; }
+        throw new InvalidOperationException("Expected the sale to be rejected.");
+    }),
+    ("Sell is case-insensitive and removes an exact liquidation", () =>
+    {
+        var portfolio = new VirtualPortfolio(10_000m);
+        portfolio.Buy("BTC", 1_000m, 100_000m);
+        var closed = portfolio.Sell("btc", 1_000m, 100_000m);
+        Ensure(closed.Quantity == 0m, "Exact liquidation should return an empty position.");
+        Ensure(portfolio.Cash == 10_000m, "Cash should return to the initial balance.");
+        Ensure(portfolio.Positions.Count == 0, "Liquidated positions should not remain in the portfolio.");
+    }),
+    ("Invalid orders are rejected without mutating the portfolio", () =>
+    {
+        var portfolio = new VirtualPortfolio(10_000m);
+        try { portfolio.Buy("BTC", 0m, 100_000m); }
+        catch (ArgumentOutOfRangeException) { }
+        Ensure(portfolio.Cash == 10_000m, "Rejected orders must not change cash.");
+        Ensure(portfolio.Positions.Count == 0, "Rejected orders must not create positions.");
+    }),
+    ("Reset is idempotent", () =>
+    {
+        var portfolio = new VirtualPortfolio(10_000m);
+        portfolio.Buy("ETH", 500m, 4_000m);
+        portfolio.Reset();
+        portfolio.Reset();
+        Ensure(portfolio.Cash == 10_000m, "Repeated reset should preserve initial cash.");
+        Ensure(portfolio.Positions.Count == 0, "Repeated reset should preserve an empty portfolio.");
     })
 };
 

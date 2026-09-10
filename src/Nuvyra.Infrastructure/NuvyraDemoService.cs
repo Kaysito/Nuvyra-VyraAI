@@ -9,50 +9,83 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     private readonly object _gate = new();
     private readonly VirtualPortfolio _portfolio = new(10_000m);
     private readonly Dictionary<Guid, DecisionIntervention> _interventions = [];
-    private readonly Dictionary<string, MarketQuote> _quotes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["BTC"] = new("BTC", "Bitcoin", 112_450m, 2.4m, 72),
-        ["ETH"] = new("ETH", "Ethereum", 4_380m, -1.8m, 79),
-        ["SOL"] = new("SOL", "Solana", 214m, 5.2m, 88)
-    };
+    private readonly List<BehavioralSignal> _signals = [];
+    private readonly IMarketDataProvider _marketData;
+
+    public NuvyraDemoService(IMarketDataProvider marketData) => _marketData = marketData;
 
     public ProfileResponse Assess(ProfileAssessmentRequest request)
     {
-        var knowledge = Math.Clamp((request.Knowledge + request.Experience) / 2, 0, 10);
-        var behavioralRisk = Math.Clamp((10 - request.LossComfort) * 6 + request.Impulsivity * 4, 0, 100);
-        var profile = new InvestorProfile(Guid.NewGuid(),
-            knowledge < 4 ? ExperienceLevel.Beginner : knowledge < 8 ? ExperienceLevel.Intermediate : ExperienceLevel.Advanced,
-            request.LossComfort < 4 ? RiskTolerance.Conservative : request.LossComfort < 8 ? RiskTolerance.Moderate : RiskTolerance.Aggressive,
-            behavioralRisk, DateTimeOffset.UtcNow);
-        return new(profile.Id, profile.Experience.ToString(), profile.RiskTolerance.ToString(), profile.BehavioralRiskScore);
+        if (!Enum.TryParse<ExperienceLevel>(request.Experience, true, out var experience) ||
+            !Enum.TryParse<RiskDisposition>(request.RiskDisposition, true, out var risk) ||
+            !Enum.TryParse<InvestmentHorizon>(request.Horizon, true, out var horizon) ||
+            !Enum.TryParse<InvestmentObjective>(request.Objective, true, out var objective) ||
+            !Enum.TryParse<PressureResponse>(request.PressureResponse, true, out var pressure))
+            throw new ArgumentException("Profile values must use the documented pulse-v1 codes.");
+
+        var profile = new InvestorProfile(Guid.NewGuid(), experience, risk, horizon, objective, pressure, true, "pulse-v1", DateTimeOffset.UtcNow);
+        return new(profile.Id, profile.Experience.ToString(), profile.RiskDisposition.ToString(), profile.Horizon.ToString(),
+            profile.Objective.ToString(), profile.PressureResponse.ToString(), profile.IsProvisional, profile.AssessmentVersion, profile.CreatedAt);
     }
 
-    public IReadOnlyCollection<object> GetQuotes() => _quotes.Values.Cast<object>().ToArray();
+    public IReadOnlyCollection<QuoteResponse> GetQuotes() => _marketData.GetQuotes().Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();
 
     public PositionResponse Buy(BuyOrderRequest request)
     {
         lock (_gate)
         {
             var quote = Quote(request.Symbol);
-            return ToResponse(_portfolio.Buy(quote.Symbol, request.Amount, quote.Price), quote);
+            var response = ToResponse(_portfolio.Buy(quote.Symbol, request.Amount, quote.Price), quote);
+            if (quote.Change24Hours >= 5) _signals.Add(new(BehavioralSignalType.BoughtDuringSpike, quote.Symbol,
+                "Compra realizada durante una subida rápida; revisa si responde a FOMO o a tu plan.", DateTimeOffset.UtcNow));
+            return response;
+        }
+    }
+
+    public PositionResponse Sell(SellOrderRequest request)
+    {
+        lock (_gate)
+        {
+            var quote = Quote(request.Symbol);
+            var response = ToResponse(_portfolio.Sell(quote.Symbol, request.Amount, quote.Price), quote);
+            if (quote.Change24Hours <= -10) _signals.Add(new(BehavioralSignalType.SoldDuringDrop, quote.Symbol,
+                "Venta realizada durante una caída fuerte; compara la decisión con tu objetivo original.", DateTimeOffset.UtcNow));
+            return response;
         }
     }
 
     public PortfolioResponse GetPortfolio()
     {
         lock (_gate)
-            return new(_portfolio.Cash, _portfolio.Positions.Select(position => ToResponse(position, Quote(position.Symbol))).ToArray());
+        {
+            var positions = _portfolio.Positions.Select(position => ToResponse(position, Quote(position.Symbol))).ToArray();
+            return new(_portfolio.Cash, _portfolio.Cash + positions.Sum(position => position.Quantity * position.CurrentPrice), positions);
+        }
     }
 
     public void SimulateCrash()
     {
         lock (_gate)
-            foreach (var symbol in _quotes.Keys.ToArray())
-            {
-                var quote = _quotes[symbol];
-                _quotes[symbol] = quote with { Price = quote.Price * 0.72m, Change24Hours = -28m, VolatilityScore = 96 };
-            }
+            _marketData.SimulateCrash();
     }
+
+    public void ResetDemo()
+    {
+        lock (_gate)
+        {
+            _portfolio.Reset();
+            _interventions.Clear();
+            _signals.Clear();
+            _marketData.Reset();
+        }
+    }
+
+    public LessonResponse GetLesson(string id) => id.Equals("volatility", StringComparison.OrdinalIgnoreCase)
+        ? new("volatility", "Volatilidad no significa fracaso", "Aprende a separar un movimiento rápido de la calidad de tu plan.", 4)
+        : throw new KeyNotFoundException("Lesson not found.");
+
+    public IReadOnlyCollection<LessonContract> GetLessons() => LearningContent.Lessons;
+    public IReadOnlyCollection<CourseModuleContract> GetCourse() => LearningContent.Course;
 
     public InterventionResponse BeforeSell(BeforeSellRequest request)
     {
@@ -79,11 +112,19 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             if (!Enum.TryParse<DecisionChoice>(request.Choice, true, out var choice)) throw new ArgumentException("Unknown decision choice.");
             intervention = intervention with { Choice = choice };
             _interventions[interventionId] = intervention;
+            if (choice is DecisionChoice.Wait24Hours or DecisionChoice.ReviewEvidence)
+                _signals.Add(new(BehavioralSignalType.PausedBeforeDecision, intervention.Symbol,
+                    "Decisión registrada después de revisar contexto antes de vender.", DateTimeOffset.UtcNow));
             return ToResponse(intervention);
         }
     }
 
-    private MarketQuote Quote(string symbol) => _quotes.TryGetValue(symbol, out var quote) ? quote : throw new KeyNotFoundException("Asset not found.");
+    public IReadOnlyCollection<BehavioralSignalResponse> GetBehavioralSignals()
+    {
+        lock (_gate) return _signals.Select(signal => new BehavioralSignalResponse(signal.Type.ToString(), signal.Symbol, signal.Explanation, signal.ObservedAt)).ToArray();
+    }
+
+    private MarketQuote Quote(string symbol) => _marketData.GetQuote(symbol);
     private static PositionResponse ToResponse(Position position, MarketQuote quote) => new(position.Symbol, position.Quantity, position.AveragePrice, quote.Price, position.ReturnPercent(quote.Price));
     private static InterventionResponse ToResponse(DecisionIntervention item) => new(item.Id, item.Symbol, item.CurrentLossPercent, item.UrgencyScore, item.Explanation, item.Alternatives.Select(value => value.ToString()).ToArray(), item.Choice?.ToString());
 }

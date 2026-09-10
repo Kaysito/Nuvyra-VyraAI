@@ -10,12 +10,9 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     private readonly VirtualPortfolio _portfolio = new(10_000m);
     private readonly Dictionary<Guid, DecisionIntervention> _interventions = [];
     private readonly List<BehavioralSignal> _signals = [];
-    private readonly Dictionary<string, MarketQuote> _quotes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["BTC"] = new("BTC", "Bitcoin", 112_450m, 2.4m, 72),
-        ["ETH"] = new("ETH", "Ethereum", 4_380m, -1.8m, 79),
-        ["SOL"] = new("SOL", "Solana", 214m, 5.2m, 88)
-    };
+    private readonly IMarketDataProvider _marketData;
+
+    public NuvyraDemoService(IMarketDataProvider marketData) => _marketData = marketData;
 
     public ProfileResponse Assess(ProfileAssessmentRequest request)
     {
@@ -31,7 +28,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             profile.Objective.ToString(), profile.PressureResponse.ToString(), profile.IsProvisional, profile.AssessmentVersion, profile.CreatedAt);
     }
 
-    public IReadOnlyCollection<QuoteResponse> GetQuotes() => _quotes.Values.Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();
+    public IReadOnlyCollection<QuoteResponse> GetQuotes() => _marketData.GetQuotes().Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();
 
     public PositionResponse Buy(BuyOrderRequest request)
     {
@@ -69,11 +66,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     public void SimulateCrash()
     {
         lock (_gate)
-            foreach (var symbol in _quotes.Keys.ToArray())
-            {
-                var quote = _quotes[symbol];
-                _quotes[symbol] = quote with { Price = quote.Price * 0.72m, Change24Hours = -28m, VolatilityScore = 96, AsOf = DateTimeOffset.UtcNow };
-            }
+            _marketData.SimulateCrash();
     }
 
     public void ResetDemo()
@@ -83,9 +76,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             _portfolio.Reset();
             _interventions.Clear();
             _signals.Clear();
-            _quotes["BTC"] = new("BTC", "Bitcoin", 112_450m, 2.4m, 72);
-            _quotes["ETH"] = new("ETH", "Ethereum", 4_380m, -1.8m, 79);
-            _quotes["SOL"] = new("SOL", "Solana", 214m, 5.2m, 88);
+            _marketData.Reset();
         }
     }
 
@@ -130,7 +121,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         lock (_gate) return _signals.Select(signal => new BehavioralSignalResponse(signal.Type.ToString(), signal.Symbol, signal.Explanation, signal.ObservedAt)).ToArray();
     }
 
-    private MarketQuote Quote(string symbol) => _quotes.TryGetValue(symbol, out var quote) ? quote : throw new KeyNotFoundException("Asset not found.");
+    private MarketQuote Quote(string symbol) => _marketData.GetQuote(symbol);
     private static PositionResponse ToResponse(Position position, MarketQuote quote) => new(position.Symbol, position.Quantity, position.AveragePrice, quote.Price, position.ReturnPercent(quote.Price));
     private static InterventionResponse ToResponse(DecisionIntervention item) => new(item.Id, item.Symbol, item.CurrentLossPercent, item.UrgencyScore, item.Explanation, item.Alternatives.Select(value => value.ToString()).ToArray(), item.Choice?.ToString());
 }

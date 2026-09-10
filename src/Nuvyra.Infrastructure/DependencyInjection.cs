@@ -5,5 +5,7 @@ namespace Nuvyra.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddNuvyraInfrastructure(this IServiceCollection services) => services.AddSingleton<INuvyraDemoService, NuvyraDemoService>();
+    public static IServiceCollection AddNuvyraInfrastructure(this IServiceCollection services) => services
+        .AddSingleton<IMarketDataProvider, DemoMarketDataProvider>()
+        .AddSingleton<INuvyraDemoService, NuvyraDemoService>();
 }

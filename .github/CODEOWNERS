@@ -1,5 +1,13 @@
-# Responsable provisional. Añadir a los demás integrantes cuando confirmen sus usuarios de GitHub.
-* @Kaysito
-/src/Nuvyra.Domain/ @Kaysito
-/docs/architecture/ @Kaysito
-/.github/ @Kaysito
+# Equipo Nuvyra. Los PR requieren revisión de al menos un responsable.
+* @Kaysito @DxRxXgSo @JoseGamalielP @AltaEli03 @Borre4023
+
+# Propiedad preferente por bloque; la regla global mantiene visibilidad cruzada.
+/apps/web/ @DxRxXgSo
+/src/Nuvyra.Domain/ @AltaEli03
+/src/Nuvyra.Application/ @AltaEli03 @Kaysito
+/src/Nuvyra.Api/ @Kaysito
+/src/Nuvyra.Contracts/ @Kaysito @AltaEli03
+/src/Nuvyra.Infrastructure/ @Kaysito
+/tests/ @Borre4023 @AltaEli03
+/docs/ @Borre4023 @JoseGamalielP
+/.github/ @Borre4023 @Kaysito

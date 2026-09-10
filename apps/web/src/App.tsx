@@ -20,7 +20,8 @@ export function App() {
 
   const navigate = (nextPage: Page) => {
     setPage(nextPage);
-    window.scrollTo({ top: 0, behavior: "instant" });
+    // `auto` is supported across browsers; `instant` is not part of the standard ScrollBehavior values.
+    window.scrollTo({ top: 0, behavior: "auto" });
   };
 
   const finishPulse = (result: PulseProfile) => {

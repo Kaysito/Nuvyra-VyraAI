@@ -93,7 +93,7 @@ export function PracticeView({
       <article className="glass-card market-panel">
         <div className="panel-header">
           <div><p className="micro-label">ACTIVOS OBSERVADOS</p><h2>Mercado</h2></div>
-          {mode !== "market" && <button
+          {mode === "practice" && <button
             type="button"
             className="button subtle"
             onClick={() => updateSession({ crash: true })}

@@ -1,4 +1,6 @@
 using Nuvyra.Domain;
+using Nuvyra.Contracts;
+using Nuvyra.Infrastructure;
 
 var checks = new (string Name, Action Run)[]
 {
@@ -70,6 +72,26 @@ var checks = new (string Name, Action Run)[]
         portfolio.Reset();
         Ensure(portfolio.Cash == 10_000m, "Repeated reset should preserve initial cash.");
         Ensure(portfolio.Positions.Count == 0, "Repeated reset should preserve an empty portfolio.");
+    }),
+    ("Sandbox crash is idempotent until reset", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var initial = service.GetQuotes().Single(quote => quote.Symbol == "BTC").Price;
+        service.SimulateCrash();
+        var afterFirst = service.GetQuotes().Single(quote => quote.Symbol == "BTC").Price;
+        service.SimulateCrash();
+        var afterSecond = service.GetQuotes().Single(quote => quote.Symbol == "BTC").Price;
+        Ensure(afterFirst == initial * 0.72m && afterSecond == afterFirst, "Repeated crash must not compound the simulation.");
+        service.ResetDemo();
+        Ensure(service.GetQuotes().Single(quote => quote.Symbol == "BTC").Price == initial, "Reset must restore market data.");
+    }),
+    ("Sandbox buy merges symbols case-insensitively", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        service.Buy(new("btc", 100m));
+        service.Buy(new("BTC", 100m));
+        var portfolio = service.GetPortfolio();
+        Ensure(portfolio.Positions.Count == 1 && portfolio.Positions.Single().Quantity > 0, "Equivalent symbols should share one position.");
     })
 };
 

@@ -11,6 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Nuvyra.Domain\Nuvyra.Domain.csproj" />
     <ProjectReference Include="..\..\src\Nuvyra.Application\Nuvyra.Application.csproj" />
+    <ProjectReference Include="..\..\src\Nuvyra.Contracts\Nuvyra.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Nuvyra.Infrastructure\Nuvyra.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

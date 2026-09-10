@@ -18,13 +18,16 @@ public sealed class NuvyraDemoService : INuvyraDemoService
 
     public ProfileResponse Assess(ProfileAssessmentRequest request)
     {
-        var knowledge = Math.Clamp((request.Knowledge + request.Experience) / 2, 0, 10);
-        var behavioralRisk = Math.Clamp((10 - request.LossComfort) * 6 + request.Impulsivity * 4, 0, 100);
-        var profile = new InvestorProfile(Guid.NewGuid(),
-            knowledge < 4 ? ExperienceLevel.Beginner : knowledge < 8 ? ExperienceLevel.Intermediate : ExperienceLevel.Advanced,
-            request.LossComfort < 4 ? RiskTolerance.Conservative : request.LossComfort < 8 ? RiskTolerance.Moderate : RiskTolerance.Aggressive,
-            behavioralRisk, DateTimeOffset.UtcNow);
-        return new(profile.Id, profile.Experience.ToString(), profile.RiskTolerance.ToString(), profile.BehavioralRiskScore);
+        if (!Enum.TryParse<ExperienceLevel>(request.Experience, true, out var experience) ||
+            !Enum.TryParse<RiskTolerance>(request.RiskDisposition, true, out var risk) ||
+            !Enum.TryParse<InvestmentHorizon>(request.Horizon, true, out var horizon) ||
+            !Enum.TryParse<InvestmentObjective>(request.Objective, true, out var objective) ||
+            !Enum.TryParse<PressureResponse>(request.PressureResponse, true, out var pressure))
+            throw new ArgumentException("Profile values must use the documented pulse-v1 codes.");
+
+        var profile = new InvestorProfile(Guid.NewGuid(), experience, risk, horizon, objective, pressure, true, "pulse-v1", DateTimeOffset.UtcNow);
+        return new(profile.Id, profile.Experience.ToString(), profile.RiskTolerance.ToString(), profile.Horizon.ToString(),
+            profile.Objective.ToString(), profile.PressureResponse.ToString(), profile.IsProvisional, profile.AssessmentVersion, profile.CreatedAt);
     }
 
     public IReadOnlyCollection<QuoteResponse> GetQuotes() => _quotes.Values.Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();

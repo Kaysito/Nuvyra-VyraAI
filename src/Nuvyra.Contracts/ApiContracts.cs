@@ -1,7 +1,7 @@
 namespace Nuvyra.Contracts;
 
-public sealed record ProfileAssessmentRequest(int Knowledge, int Experience, int LossComfort, int Impulsivity);
-public sealed record ProfileResponse(Guid Id, string Experience, string RiskTolerance, int BehavioralRiskScore);
+public sealed record ProfileAssessmentRequest(string Experience, string RiskDisposition, string Horizon, string Objective, string PressureResponse);
+public sealed record ProfileResponse(Guid Id, string Experience, string RiskDisposition, string Horizon, string Objective, string PressureResponse, bool IsProvisional, string AssessmentVersion, DateTimeOffset CreatedAt);
 public sealed record BuyOrderRequest(string Symbol, decimal Amount);
 public sealed record SellOrderRequest(string Symbol, decimal Amount);
 public sealed record PositionResponse(string Symbol, decimal Quantity, decimal AveragePrice, decimal CurrentPrice, decimal ReturnPercent);

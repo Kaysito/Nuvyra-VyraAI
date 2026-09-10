@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#082b49" />
+    <script>
+      // Resolve appearance before the first paint to avoid a light flash at night.
+      try {
+        var preference = localStorage.getItem("nuvyra.theme");
+        document.documentElement.dataset.theme = preference === "light" || preference === "dark"
+          ? preference : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      } catch {
+        document.documentElement.dataset.theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+    </script>
     <title>Nuvyra — Different perspectives, a clearer path</title>
   </head>
   <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>

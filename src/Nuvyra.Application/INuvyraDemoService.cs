@@ -10,5 +10,9 @@ public interface INuvyraDemoService
     PortfolioResponse GetPortfolio();
     InterventionResponse BeforeSell(BeforeSellRequest request);
     InterventionResponse RecordDecision(Guid interventionId, DecisionRequest request);
+    IReadOnlyCollection<PulseQuestionContract> GetPulse();
+    IReadOnlyCollection<LessonContract> GetLessons();
+    IReadOnlyCollection<CourseModuleContract> GetCourse();
+    BehaviorSignalContract? CheckBehavior(BehaviorCheckRequest request);
     void SimulateCrash();
 }

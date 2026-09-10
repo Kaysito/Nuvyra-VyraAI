@@ -13,14 +13,26 @@ app.UseExceptionHandler(error => error.Run(async context =>
     await context.Response.WriteAsJsonAsync(new { error = "The request could not be completed." });
 }));
 app.UseCors();
+
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", product = "Nuvyra", heritage = "KairosAI" }));
 app.MapGet("/api/market/quotes", (INuvyraDemoService service) => service.GetQuotes());
-app.MapPost("/api/profiles/assessment", (ProfileAssessmentRequest request, INuvyraDemoService service) => Results.Ok(service.Assess(request)));
+
+app.MapGet("/api/profiles/pulse", (INuvyraDemoService service) => Results.Ok(service.GetPulse()));
+app.MapPost("/api/profiles/assessment", (ProfileAssessmentRequest request, INuvyraDemoService service) =>
+    Results.Ok(service.Assess(request)));
+
+app.MapGet("/api/learn/lessons", (INuvyraDemoService service) => Results.Ok(service.GetLessons()));
+app.MapGet("/api/learn/course", (INuvyraDemoService service) => Results.Ok(service.GetCourse()));
+
+app.MapPost("/api/behavior/check", (BehaviorCheckRequest request, INuvyraDemoService service) =>
+    Results.Ok(service.CheckBehavior(request)));
+
 app.MapGet("/api/sandbox/portfolio", (INuvyraDemoService service) => service.GetPortfolio());
 app.MapPost("/api/sandbox/orders", (BuyOrderRequest request, INuvyraDemoService service) => Results.Ok(service.Buy(request)));
 app.MapPost("/api/demo/crash", (INuvyraDemoService service) => { service.SimulateCrash(); return Results.NoContent(); });
 app.MapPost("/api/decisions/before-sell", (BeforeSellRequest request, INuvyraDemoService service) => Results.Ok(service.BeforeSell(request)));
 app.MapPost("/api/decisions/{id:guid}/choice", (Guid id, DecisionRequest request, INuvyraDemoService service) => Results.Ok(service.RecordDecision(id, request)));
+
 app.Run();
 
 public partial class Program;

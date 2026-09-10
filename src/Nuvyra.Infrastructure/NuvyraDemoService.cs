@@ -9,6 +9,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     private readonly object _gate = new();
     private readonly VirtualPortfolio _portfolio = new(10_000m);
     private readonly Dictionary<Guid, DecisionIntervention> _interventions = [];
+    private readonly List<BehavioralSignal> _signals = [];
     private readonly Dictionary<string, MarketQuote> _quotes = new(StringComparer.OrdinalIgnoreCase)
     {
         ["BTC"] = new("BTC", "Bitcoin", 112_450m, 2.4m, 72),
@@ -37,7 +38,10 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         lock (_gate)
         {
             var quote = Quote(request.Symbol);
-            return ToResponse(_portfolio.Buy(quote.Symbol, request.Amount, quote.Price), quote);
+            var response = ToResponse(_portfolio.Buy(quote.Symbol, request.Amount, quote.Price), quote);
+            if (quote.Change24Hours >= 5) _signals.Add(new(BehavioralSignalType.BoughtDuringSpike, quote.Symbol,
+                "Compra realizada durante una subida rápida; revisa si responde a FOMO o a tu plan.", DateTimeOffset.UtcNow));
+            return response;
         }
     }
 
@@ -46,7 +50,10 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         lock (_gate)
         {
             var quote = Quote(request.Symbol);
-            return ToResponse(_portfolio.Sell(quote.Symbol, request.Amount, quote.Price), quote);
+            var response = ToResponse(_portfolio.Sell(quote.Symbol, request.Amount, quote.Price), quote);
+            if (quote.Change24Hours <= -10) _signals.Add(new(BehavioralSignalType.SoldDuringDrop, quote.Symbol,
+                "Venta realizada durante una caída fuerte; compara la decisión con tu objetivo original.", DateTimeOffset.UtcNow));
+            return response;
         }
     }
 
@@ -75,6 +82,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         {
             _portfolio.Reset();
             _interventions.Clear();
+            _signals.Clear();
             _quotes["BTC"] = new("BTC", "Bitcoin", 112_450m, 2.4m, 72);
             _quotes["ETH"] = new("ETH", "Ethereum", 4_380m, -1.8m, 79);
             _quotes["SOL"] = new("SOL", "Solana", 214m, 5.2m, 88);
@@ -110,8 +118,16 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             if (!Enum.TryParse<DecisionChoice>(request.Choice, true, out var choice)) throw new ArgumentException("Unknown decision choice.");
             intervention = intervention with { Choice = choice };
             _interventions[interventionId] = intervention;
+            if (choice is DecisionChoice.Wait24Hours or DecisionChoice.ReviewEvidence)
+                _signals.Add(new(BehavioralSignalType.PausedBeforeDecision, intervention.Symbol,
+                    "Decisión registrada después de revisar contexto antes de vender.", DateTimeOffset.UtcNow));
             return ToResponse(intervention);
         }
+    }
+
+    public IReadOnlyCollection<BehavioralSignalResponse> GetBehavioralSignals()
+    {
+        lock (_gate) return _signals.Select(signal => new BehavioralSignalResponse(signal.Type.ToString(), signal.Symbol, signal.Explanation, signal.ObservedAt)).ToArray();
     }
 
     private MarketQuote Quote(string symbol) => _quotes.TryGetValue(symbol, out var quote) ? quote : throw new KeyNotFoundException("Asset not found.");

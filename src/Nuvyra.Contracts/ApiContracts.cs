@@ -11,4 +11,5 @@ public sealed record LessonResponse(string Id, string Title, string Summary, int
 public sealed record BeforeSellRequest(string Symbol);
 public sealed record InterventionResponse(Guid Id, string Symbol, decimal CurrentLossPercent, int UrgencyScore, string Explanation, IReadOnlyCollection<string> Alternatives, string? Choice);
 public sealed record DecisionRequest(string Choice);
+public sealed record BehavioralSignalResponse(string Type, string Symbol, string Explanation, DateTimeOffset ObservedAt);
 public sealed record ApiErrorResponse(string Code, string Message, string TraceId, IReadOnlyDictionary<string, string[]>? Errors = null);

@@ -35,6 +35,7 @@ app.MapPost("/api/demo/crash", (INuvyraDemoService service) => { service.Simulat
 app.MapPost("/api/demo/reset", (INuvyraDemoService service) => { service.ResetDemo(); return Results.NoContent(); });
 app.MapPost("/api/decisions/before-sell", (BeforeSellRequest request, INuvyraDemoService service) => Results.Ok(service.BeforeSell(request)));
 app.MapPost("/api/decisions/{id:guid}/choice", (Guid id, DecisionRequest request, INuvyraDemoService service) => Results.Ok(service.RecordDecision(id, request)));
+app.MapGet("/api/sandbox/signals", (INuvyraDemoService service) => service.GetBehavioralSignals());
 app.Run();
 
 public partial class Program;

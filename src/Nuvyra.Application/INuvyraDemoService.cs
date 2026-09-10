@@ -11,6 +11,7 @@ public interface INuvyraDemoService
     PortfolioResponse GetPortfolio();
     InterventionResponse BeforeSell(BeforeSellRequest request);
     InterventionResponse RecordDecision(Guid interventionId, DecisionRequest request);
+    IReadOnlyCollection<BehavioralSignalResponse> GetBehavioralSignals();
     void SimulateCrash();
     void ResetDemo();
     LessonResponse GetLesson(string id);

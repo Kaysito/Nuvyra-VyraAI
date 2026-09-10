@@ -6,6 +6,7 @@ public enum DecisionChoice { Wait24Hours, ReviewEvidence, ContinueSale }
 public enum InvestmentHorizon { Short, Medium, Long, Unspecified }
 public enum InvestmentObjective { Preservation, Growth, Income, Unspecified }
 public enum PressureResponse { ActNow, CheckThenAct, PauseAndReview, Unsure }
+public enum BehavioralSignalType { BoughtDuringSpike, SoldDuringDrop, PausedBeforeDecision }
 
 public sealed record InvestorProfile(Guid Id, ExperienceLevel Experience, RiskDisposition RiskDisposition,
     InvestmentHorizon Horizon, InvestmentObjective Objective, PressureResponse PressureResponse,
@@ -68,3 +69,4 @@ public sealed class VirtualPortfolio
 
 public sealed record DecisionIntervention(Guid Id, string Symbol, decimal CurrentLossPercent, int UrgencyScore,
     string Explanation, IReadOnlyCollection<DecisionChoice> Alternatives, DateTimeOffset CreatedAt, DecisionChoice? Choice = null);
+public sealed record BehavioralSignal(BehavioralSignalType Type, string Symbol, string Explanation, DateTimeOffset ObservedAt);

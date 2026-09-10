@@ -30,6 +30,7 @@ app.MapGet("/api/learning/lessons/{id}", (string id, INuvyraDemoService service)
 app.MapGet("/api/learn/lessons", (INuvyraDemoService service) => service.GetLessons());
 app.MapGet("/api/learn/course", (INuvyraDemoService service) => service.GetCourse());
 app.MapPost("/api/profiles/assessment", (ProfileAssessmentRequest request, INuvyraDemoService service) => Results.Ok(service.Assess(request)));
+app.MapGet("/api/profiles/pulse", (INuvyraDemoService service) => service.GetPulseQuestions());
 app.MapGet("/api/sandbox/portfolio", (INuvyraDemoService service) => service.GetPortfolio());
 app.MapPost("/api/sandbox/orders", (BuyOrderRequest request, INuvyraDemoService service) => Results.Ok(service.Buy(request)));
 app.MapPost("/api/sandbox/orders/sell", (SellOrderRequest request, INuvyraDemoService service) => Results.Ok(service.Sell(request)));

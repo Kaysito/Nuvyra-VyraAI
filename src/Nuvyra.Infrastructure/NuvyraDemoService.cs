@@ -16,17 +16,20 @@ public sealed class NuvyraDemoService : INuvyraDemoService
 
     public ProfileResponse Assess(ProfileAssessmentRequest request)
     {
-        if (!Enum.TryParse<ExperienceLevel>(request.Experience, true, out var experience) ||
-            !Enum.TryParse<RiskDisposition>(request.RiskDisposition, true, out var risk) ||
-            !Enum.TryParse<InvestmentHorizon>(request.Horizon, true, out var horizon) ||
-            !Enum.TryParse<InvestmentObjective>(request.Objective, true, out var objective) ||
-            !Enum.TryParse<PressureResponse>(request.PressureResponse, true, out var pressure))
+        ArgumentNullException.ThrowIfNull(request);
+        if (!TryParseCode(request.Experience, out ExperienceLevel experience) ||
+            !TryParseCode(request.RiskDisposition, out RiskDisposition risk) ||
+            !TryParseCode(request.Horizon, out InvestmentHorizon horizon) ||
+            !TryParseCode(request.Objective, out InvestmentObjective objective) ||
+            !TryParseCode(request.PressureResponse, out PressureResponse pressure))
             throw new ArgumentException("Profile values must use the documented pulse-v1 codes.");
 
         var profile = new InvestorProfile(Guid.NewGuid(), experience, risk, horizon, objective, pressure, true, "pulse-v1", DateTimeOffset.UtcNow);
         return new(profile.Id, profile.Experience.ToString(), profile.RiskDisposition.ToString(), profile.Horizon.ToString(),
             profile.Objective.ToString(), profile.PressureResponse.ToString(), profile.IsProvisional, profile.AssessmentVersion, profile.CreatedAt);
     }
+
+    public IReadOnlyCollection<PulseQuestionContract> GetPulseQuestions() => LearningContent.Pulse;
 
     public IReadOnlyCollection<QuoteResponse> GetQuotes() => _marketData.GetQuotes().Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();
 
@@ -80,8 +83,8 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         }
     }
 
-    public LessonResponse GetLesson(string id) => id.Equals("volatility", StringComparison.OrdinalIgnoreCase)
-        ? new("volatility", "Volatilidad no significa fracaso", "Aprende a separar un movimiento rápido de la calidad de tu plan.", 4)
+    public LessonResponse GetLesson(string id) => id.Equals("volatility", StringComparison.OrdinalIgnoreCase) || id.Equals("lesson.volatility", StringComparison.OrdinalIgnoreCase)
+        ? new("lesson.volatility", "Volatilidad no significa fracaso", "Aprende a separar un movimiento rápido de la calidad de tu plan.", 4)
         : throw new KeyNotFoundException("Lesson not found.");
 
     public IReadOnlyCollection<LessonContract> GetLessons() => LearningContent.Lessons;
@@ -125,6 +128,14 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     }
 
     private MarketQuote Quote(string symbol) => _marketData.GetQuote(symbol);
+    private static bool TryParseCode<T>(string? value, out T result) where T : struct, Enum
+    {
+        result = default;
+        return !string.IsNullOrWhiteSpace(value)
+            && !int.TryParse(value, out _)
+            && Enum.TryParse(value, true, out result)
+            && Enum.IsDefined(result);
+    }
     private static PositionResponse ToResponse(Position position, MarketQuote quote) => new(position.Symbol, position.Quantity, position.AveragePrice, quote.Price, position.ReturnPercent(quote.Price));
     private static InterventionResponse ToResponse(DecisionIntervention item) => new(item.Id, item.Symbol, item.CurrentLossPercent, item.UrgencyScore, item.Explanation, item.Alternatives.Select(value => value.ToString()).ToArray(), item.Choice?.ToString());
 }

@@ -1,4 +1,6 @@
 using Nuvyra.Domain;
+using Nuvyra.Contracts;
+using Nuvyra.Infrastructure;
 
 var checks = new (string Name, Action Run)[]
 {
@@ -70,6 +72,29 @@ var checks = new (string Name, Action Run)[]
         portfolio.Reset();
         Ensure(portfolio.Cash == 10_000m, "Repeated reset should preserve initial cash.");
         Ensure(portfolio.Positions.Count == 0, "Repeated reset should preserve an empty portfolio.");
+    }),
+    ("Pulse assessment preserves independent provisional dimensions", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var profile = service.Assess(new("beginner", "medium", "long", "growth", "pauseAndReview"));
+        Ensure(profile.IsProvisional && profile.AssessmentVersion == "pulse-v1", "Pulse profile metadata is incorrect.");
+        Ensure(profile.Experience == "Beginner" && profile.RiskDisposition == "Medium", "Experience and risk must remain independent.");
+        Ensure(profile.Horizon == "Long" && profile.Objective == "Growth" && profile.PressureResponse == "PauseAndReview", "Pulse dimensions were not mapped correctly.");
+    }),
+    ("Pulse assessment rejects numeric and undefined enum codes", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        try { service.Assess(new("1", "medium", "long", "growth", "pauseAndReview")); }
+        catch (ArgumentException) { }
+        try { service.Assess(new("beginner", "invalid", "long", "growth", "pauseAndReview")); return; }
+        catch (ArgumentException) { }
+    }),
+    ("Pulse questions expose the five contract dimensions", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var questions = service.GetPulseQuestions();
+        Ensure(questions.Count == 5, "Pulse must contain five questions.");
+        Ensure(questions.Select(question => question.Dimension).SequenceEqual(["experience", "riskDisposition", "horizon", "objective", "pressureResponse"]), "Pulse dimensions are not aligned.");
     })
 };
 

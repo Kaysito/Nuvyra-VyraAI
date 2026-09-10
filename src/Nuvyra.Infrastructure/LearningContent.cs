@@ -10,13 +10,13 @@ internal static class LearningContent
         [
             new("Nunca he invertido", "beginner", "experience", "Indica un punto de partida inicial."),
             new("He realizado algunas inversiones", "intermediate", "experience", "Indica experiencia práctica ocasional."),
-            new("Invierto con frecuencia y conozco los conceptos básicos", "experienced", "experience", "Indica experiencia práctica frecuente.")
+            new("Invierto con frecuencia y conozco los conceptos básicos", "advanced", "experience", "Indica experiencia práctica frecuente.")
         ]),
-        new("pulse.loss-reaction", "Si una inversión que tienes baja 20 %, ¿qué harías primero?", "tolerance",
+        new("pulse.risk-disposition", "Si una inversión que tienes baja 20 %, ¿qué harías primero?", "riskDisposition",
         [
-            new("Vendería para evitar perder más", "sell", "tolerance", "Refleja una reacción de menor comodidad ante una caída."),
-            new("Revisaría la situación antes de decidir", "review", "tolerance", "Refleja una respuesta intermedia que busca contexto."),
-            new("Mantendría la posición si mi plan no ha cambiado", "hold", "tolerance", "Refleja mayor disposición a mantener un plan durante una caída.")
+            new("Vendería para evitar perder más", "low", "riskDisposition", "Refleja menor disposición a asumir riesgo."),
+            new("Revisaría la situación antes de decidir", "medium", "riskDisposition", "Refleja una disposición intermedia al riesgo."),
+            new("Mantendría la posición si mi plan no ha cambiado", "high", "riskDisposition", "Refleja mayor disposición a asumir riesgo.")
         ]),
         new("pulse.horizon", "¿Cuánto tiempo planeas mantener normalmente una inversión?", "horizon",
         [
@@ -24,18 +24,19 @@ internal static class LearningContent
             new("Entre 1 y 5 años", "medium", "horizon", "Representa un horizonte medio."),
             new("Más de 5 años", "long", "horizon", "Representa un horizonte largo.")
         ]),
-        new("pulse.objective", "¿Qué te gustaría conseguir principalmente al aprender sobre inversiones?", "objective",
+        new("pulse.objective", "¿Cuál es tu objetivo principal al invertir?", "objective",
         [
-            new("Entender mejor cómo funcionan", "learn", "objective", "Prioriza aprendizaje y comprensión."),
-            new("Cuidar lo que ya tengo", "preserve", "objective", "Prioriza preservación como objetivo educativo."),
-            new("Buscar crecimiento a largo plazo", "grow", "objective", "Prioriza crecimiento como objetivo educativo."),
-            new("Probar diferentes estrategias", "explore", "objective", "Prioriza exploración de estrategias en el entorno educativo.")
+            new("Preservar mi capital", "preservation", "objective", "Prioriza conservar el capital."),
+            new("Buscar crecimiento a largo plazo", "growth", "objective", "Prioriza crecimiento del capital."),
+            new("Generar ingresos", "income", "objective", "Prioriza ingresos periódicos."),
+            new("Todavía no lo tengo claro", "unspecified", "objective", "Indica que el objetivo está por definirse.")
         ]),
-        new("pulse.uncertainty", "¿Qué tan cómodo te sientes cuando no puedes saber con certeza qué hará una inversión?", "tolerance",
+        new("pulse.pressure-response", "Ante una caída rápida del mercado, ¿qué harías primero?", "pressureResponse",
         [
-            new("Prefiero evitar mucha incertidumbre", "low", "tolerance", "Indica menor comodidad ante escenarios inciertos."),
-            new("Puedo aceptar cierta incertidumbre", "medium", "tolerance", "Indica comodidad intermedia ante escenarios inciertos."),
-            new("Me siento cómodo tomando decisiones con incertidumbre", "high", "tolerance", "Indica mayor comodidad ante escenarios inciertos.")
+            new("Actuaría de inmediato", "actNow", "pressureResponse", "Indica una respuesta de acción urgente."),
+            new("Revisaría el contexto y después decidiría", "checkThenAct", "pressureResponse", "Indica una respuesta que busca contexto."),
+            new("Pausaría y revisaría mi plan", "pauseAndReview", "pressureResponse", "Indica una respuesta reflexiva."),
+            new("No estoy seguro todavía", "unsure", "pressureResponse", "Indica que la respuesta aún está en formación.")
         ])
     ];
 

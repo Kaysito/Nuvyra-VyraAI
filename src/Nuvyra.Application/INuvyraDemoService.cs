@@ -5,6 +5,7 @@ namespace Nuvyra.Application;
 public interface INuvyraDemoService
 {
     ProfileResponse Assess(ProfileAssessmentRequest request);
+    IReadOnlyCollection<PulseQuestionContract> GetPulseQuestions();
     IReadOnlyCollection<QuoteResponse> GetQuotes();
     PositionResponse Buy(BuyOrderRequest request);
     PositionResponse Sell(SellOrderRequest request);

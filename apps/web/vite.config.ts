@@ -21,6 +21,14 @@ export default defineConfig({
         "src/**/*.spec.{ts,tsx}",
         "src/test/**",
       ],
+      thresholds: {
+        "src/pulse/pulseModel.ts": {
+          statements: 100,
+          branches: 100,
+          functions: 100,
+          lines: 100,
+        },
+      },
     },
   },
 });

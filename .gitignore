@@ -11,4 +11,5 @@ dist/
 !.env.example
 *.user
 *.suo
+*.tsbuildinfo
 coverage/

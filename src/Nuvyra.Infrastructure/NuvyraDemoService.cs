@@ -27,7 +27,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         return new(profile.Id, profile.Experience.ToString(), profile.RiskTolerance.ToString(), profile.BehavioralRiskScore);
     }
 
-    public IReadOnlyCollection<object> GetQuotes() => _quotes.Values.Cast<object>().ToArray();
+    public IReadOnlyCollection<QuoteResponse> GetQuotes() => _quotes.Values.Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();
 
     public PositionResponse Buy(BuyOrderRequest request)
     {
@@ -38,10 +38,22 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         }
     }
 
+    public PositionResponse Sell(SellOrderRequest request)
+    {
+        lock (_gate)
+        {
+            var quote = Quote(request.Symbol);
+            return ToResponse(_portfolio.Sell(quote.Symbol, request.Amount, quote.Price), quote);
+        }
+    }
+
     public PortfolioResponse GetPortfolio()
     {
         lock (_gate)
-            return new(_portfolio.Cash, _portfolio.Positions.Select(position => ToResponse(position, Quote(position.Symbol))).ToArray());
+        {
+            var positions = _portfolio.Positions.Select(position => ToResponse(position, Quote(position.Symbol))).ToArray();
+            return new(_portfolio.Cash, _portfolio.Cash + positions.Sum(position => position.Quantity * position.CurrentPrice), positions);
+        }
     }
 
     public void SimulateCrash()
@@ -50,9 +62,25 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             foreach (var symbol in _quotes.Keys.ToArray())
             {
                 var quote = _quotes[symbol];
-                _quotes[symbol] = quote with { Price = quote.Price * 0.72m, Change24Hours = -28m, VolatilityScore = 96 };
+                _quotes[symbol] = quote with { Price = quote.Price * 0.72m, Change24Hours = -28m, VolatilityScore = 96, AsOf = DateTimeOffset.UtcNow };
             }
     }
+
+    public void ResetDemo()
+    {
+        lock (_gate)
+        {
+            _portfolio.Reset();
+            _interventions.Clear();
+            _quotes["BTC"] = new("BTC", "Bitcoin", 112_450m, 2.4m, 72);
+            _quotes["ETH"] = new("ETH", "Ethereum", 4_380m, -1.8m, 79);
+            _quotes["SOL"] = new("SOL", "Solana", 214m, 5.2m, 88);
+        }
+    }
+
+    public LessonResponse GetLesson(string id) => id.Equals("volatility", StringComparison.OrdinalIgnoreCase)
+        ? new("volatility", "Volatilidad no significa fracaso", "Aprende a separar un movimiento rápido de la calidad de tu plan.", 4)
+        : throw new KeyNotFoundException("Lesson not found.");
 
     public InterventionResponse BeforeSell(BeforeSellRequest request)
     {

@@ -1,7 +1,23 @@
 # David: entrega del miércoles 9 de septiembre
 
 Responsable: David (@DxRxXgSo). Bloque 1: frontend y experiencia visual.
-Rama: `feat/responsive-user-experience`.
+Rama de la entrega original: `feat/responsive-user-experience` (histórica; no usar para trabajo nuevo).
+
+## Estado actual tras PR #12
+
+La entrega frontend descrita en esta nota quedó integrada en `main` mediante el PR #12. El estado vigente es:
+
+- `pulse-v1` está integrado en `main`.
+- El perfil es provisional y conserva cinco dimensiones independientes: experiencia, disposición ante el riesgo, horizonte, objetivo y respuesta ante presión.
+- No existe una métrica global `clarity` ni `BehavioralRiskScore` en el frontend.
+- `PulseView` legado fue eliminado.
+- `LearnView` consume `/api/learn/lessons` y `/api/learn/course`.
+- `Practice`, `Market` y `Portfolio` están integrados.
+- Los issues #6, #8 y #11 están completados.
+- La validación final registró 643 tests pasados en 8 suites; `pulseModel.ts` y `PulseV1View.tsx` tienen 100% de cobertura.
+- CI y CodeQL están verdes.
+
+Las instrucciones de preparación y la lista de tareas que siguen documentan la planificación histórica de esa entrega. Para trabajo nuevo, partir de `origin/main` en una rama nueva.
 
 David, ya tienes los cimientos publicados. Queremos que puedas refinar esta base con tu criterio y proponer mejoras alcanzables para la exposición del viernes 11. No necesitas reconstruirla ni terminar todo el frontend hoy.
 

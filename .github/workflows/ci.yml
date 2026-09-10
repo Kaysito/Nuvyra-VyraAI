@@ -40,3 +40,27 @@ jobs:
           node-version: 24
       - run: npm install --ignore-scripts
       - run: npm run build
+
+  dependency-audit:
+    name: Security · dependency audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Restore .NET packages
+        run: dotnet restore Nuvyra.slnx
+      - name: Check vulnerable .NET packages
+        run: dotnet list Nuvyra.slnx package --vulnerable --include-transitive
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm install --ignore-scripts
+      - name: Check high-severity npm advisories
+        working-directory: apps/web
+        run: npm audit --audit-level=high

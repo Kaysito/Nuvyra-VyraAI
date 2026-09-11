@@ -203,7 +203,55 @@ foreach (var check in checks)
     Console.WriteLine($"PASS: {check.Name}");
 }
 
+await CheckLiveMarketProvider();
+
 static void Ensure(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+static async Task CheckLiveMarketProvider()
+{
+    const string payload = """
+        {
+          "bitcoin": { "usd": 70000, "usd_24h_change": 2.5, "last_updated_at": 1711356300 },
+          "ethereum": { "usd": 3500, "usd_24h_change": -1.25, "last_updated_at": 1711356300 },
+          "solana": { "usd": 180, "usd_24h_change": 4.75, "last_updated_at": 1711356300 }
+        }
+        """;
+
+    var successHandler = new StubHttpMessageHandler(_ => new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+    {
+        Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json")
+    });
+    var successProvider = new CoinGeckoMarketDataProvider(
+        new HttpClient(successHandler) { BaseAddress = new Uri("https://api.coingecko.com/api/v3/") },
+        cacheDuration: TimeSpan.FromMinutes(1));
+
+    var first = await successProvider.GetQuotesAsync();
+    var second = await successProvider.GetQuotesAsync();
+    Ensure(first.Count == 3, "Live provider must map the three supported assets.");
+    Ensure(first.Single(quote => quote.Symbol == "BTC").Price == 70_000m, "CoinGecko price was not mapped.");
+    Ensure(first.All(quote => quote.Source == "coingecko"), "Live quotes must identify their source.");
+    Ensure(successHandler.CallCount == 1 && ReferenceEquals(first, second), "Fresh quotes must be served from cache.");
+    Console.WriteLine("PASS: Live market maps CoinGecko and uses the short cache");
+
+    var failureHandler = new StubHttpMessageHandler(_ => new HttpResponseMessage(System.Net.HttpStatusCode.TooManyRequests));
+    var fallbackProvider = new CoinGeckoMarketDataProvider(
+        new HttpClient(failureHandler) { BaseAddress = new Uri("https://api.coingecko.com/api/v3/") });
+    var fallback = await fallbackProvider.GetQuotesAsync();
+    Ensure(fallback.Count == 3 && fallback.All(quote => quote.Source == "demo-fallback"),
+        "External failures must return clearly identified local data.");
+    Console.WriteLine("PASS: Live market falls back safely when CoinGecko is unavailable");
+}
+
+sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler
+{
+    public int CallCount { get; private set; }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        CallCount++;
+        return Task.FromResult(responseFactory(request));
+    }
 }

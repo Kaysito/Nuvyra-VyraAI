@@ -3,7 +3,7 @@ using Nuvyra.Contracts;
 using Nuvyra.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddNuvyraInfrastructure();
+builder.Services.AddNuvyraInfrastructure(builder.Configuration);
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod()));
 var app = builder.Build();
 
@@ -25,7 +25,18 @@ app.UseExceptionHandler(error => error.Run(async context =>
 }));
 app.UseCors();
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", product = "Nuvyra", heritage = "KairosAI" }));
-app.MapGet("/api/market/quotes", (INuvyraDemoService service) => service.GetQuotes());
+app.MapGet("/api/market/quotes", async (ILiveMarketDataProvider provider, CancellationToken cancellationToken) =>
+{
+    var quotes = await provider.GetQuotesAsync(cancellationToken);
+    return quotes.Select(quote => new QuoteResponse(
+        quote.Symbol,
+        quote.Name,
+        quote.Price,
+        quote.Change24Hours,
+        quote.VolatilityScore,
+        quote.AsOf ?? DateTimeOffset.UtcNow,
+        quote.Source));
+});
 app.MapGet("/api/learning/lessons/{id}", (string id, INuvyraDemoService service) => service.GetLesson(id));
 app.MapGet("/api/learn/lessons", (INuvyraDemoService service) => service.GetLessons());
 app.MapGet("/api/learn/course", (INuvyraDemoService service) => service.GetCourse());

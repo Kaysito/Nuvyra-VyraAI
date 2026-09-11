@@ -8,9 +8,9 @@ const navigation: { label: Page; icon: string }[] = [
   { label: "Portafolio", icon: "▱" }, { label: "Perfil", icon: "○" },
 ];
 
-export function AppShell({ page, onNavigate, profile, children }: {
+export function AppShell({ page, onNavigate, profile, vyraPoints = 0, children }: {
   page: Page; onNavigate: (page: Page) => void;
-  profile: { experience: string }; children: ReactNode;
+  profile: { experience: string }; vyraPoints?: number; children: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("nuvyra.sidebar") === "collapsed"; } catch { return false; }
@@ -53,6 +53,7 @@ export function AppShell({ page, onNavigate, profile, children }: {
         </button>)}
       </nav>
       <div className="sidebar-context">
+        <div className="points-pill" aria-label={`${vyraPoints} VyraPoints`}><span aria-hidden="true">✦</span><strong>{vyraPoints} VP</strong></div>
         <p className="micro-label">TU CONTEXTO</p>
         <div><span className="profile-orb" aria-hidden="true">{profile.experience === "En calibración" ? "?" : profile.experience[0]}</span>
           <span><b>{profile.experience}</b><small>{profile.experience === "En calibración" ? "Pulso pendiente" : "Perfil provisional"}</small></span></div>

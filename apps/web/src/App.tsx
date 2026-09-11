@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AppShell, type Page } from "./components/AppShell";
 import { LearnView } from "./components/LearnView";
-import { INITIAL_PRACTICE_SESSION, PracticeView, type PracticeSession } from "./components/PracticeView";
+import { PracticeView } from "./components/PracticeView";
+import { INITIAL_PRACTICE_SESSION, type PracticeSession } from "./components/practiceSession";
 import { PulseV1View } from "./pulse/PulseV1View";
 import type { PulseProfile } from "./pulse/pulseModel";
 import {
@@ -16,7 +17,9 @@ export function App() {
   const [page, setPage] = useState<Page>("Inicio");
   const [profile, setProfile] = useState<PulseProfile | null>(null);
   const [practiceSession, setPracticeSession] = useState<PracticeSession>(() => ({ ...INITIAL_PRACTICE_SESSION }));
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const pulseComplete = profile !== null;
+  const vyraPoints = (profile ? 20 : 0) + completedLessonIds.length * 15 + (practiceSession.vyraPoints ?? 0);
 
   const navigate = (nextPage: Page) => {
     setPage(nextPage);
@@ -31,7 +34,7 @@ export function App() {
 
   const profileExperience = profile ? getExperienceLabel(profile.experience) : "En calibración";
 
-  return <AppShell page={page} onNavigate={navigate} profile={{ experience: profileExperience }}>
+  return <AppShell page={page} onNavigate={navigate} profile={{ experience: profileExperience }} vyraPoints={vyraPoints}>
     {page === "Inicio" && <HomeView
       pulseComplete={pulseComplete}
       profile={profile}
@@ -40,10 +43,10 @@ export function App() {
       onMarket={() => navigate("Mercado")}
     />}
     {page === "Pulso" && <PulseV1View onComplete={finishPulse} />}
-    {page === "Aprende" && <LearnView onPractice={() => navigate("Practica")} />}
-    {page === "Practica" && <PracticeView mode="practice" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
-    {page === "Mercado" && <PracticeView mode="market" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
-    {page === "Portafolio" && <PracticeView mode="portfolio" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
+    {page === "Aprende" && <LearnView completedLessonIds={completedLessonIds} onComplete={lessonId => setCompletedLessonIds(current => current.includes(lessonId) ? current : [...current, lessonId])} onPractice={() => navigate("Practica")} />}
+    {page === "Practica" && <PracticeView mode="practice" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} totalVyraPoints={vyraPoints} />}
+    {page === "Mercado" && <PracticeView mode="market" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} totalVyraPoints={vyraPoints} />}
+    {page === "Portafolio" && <PracticeView mode="portfolio" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} totalVyraPoints={vyraPoints} />}
     {page === "Perfil" && <ProfileView profile={profile} onRetake={() => navigate("Pulso")} />}
   </AppShell>;
 }

@@ -91,9 +91,14 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         }
     }
 
-    public LessonResponse GetLesson(string id) => id.Equals("volatility", StringComparison.OrdinalIgnoreCase) || id.Equals("lesson.volatility", StringComparison.OrdinalIgnoreCase)
-        ? new("lesson.volatility", "Volatilidad no significa fracaso", "Aprende a separar un movimiento rápido de la calidad de tu plan.", 4)
-        : throw new KeyNotFoundException("Lesson not found.");
+    public LessonResponse GetLesson(string id)
+    {
+        var lesson = LearningContent.Lessons.FirstOrDefault(l =>
+            l.Id.Equals(id, StringComparison.OrdinalIgnoreCase) ||
+            l.Id.Replace("lesson.", "").Equals(id, StringComparison.OrdinalIgnoreCase))
+            ?? throw new KeyNotFoundException("Lesson not found.");
+        return new(lesson.Id, lesson.Title, lesson.Objective, lesson.EstimatedMinutes);
+    }
 
     public IReadOnlyCollection<LessonContract> GetLessons() => LearningContent.Lessons;
     public IReadOnlyCollection<CourseModuleContract> GetCourse() => LearningContent.Course;

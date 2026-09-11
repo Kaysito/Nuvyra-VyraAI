@@ -115,6 +115,85 @@ var checks = new (string Name, Action Run)[]
         service.Buy(new("BTC", 100m));
         var portfolio = service.GetPortfolio();
         Ensure(portfolio.Positions.Count == 1 && portfolio.Positions.Single().Quantity > 0, "Equivalent symbols should share one position.");
+    }),
+    ("Course is non-empty and contains modules", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var course = service.GetCourse();
+        Ensure(course.Count > 0, "Course must contain at least one module.");
+    }),
+    ("Course modules have valid lesson references", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var course = service.GetCourse();
+        var lessons = service.GetLessons();
+        var lessonIds = lessons.Select(l => l.Id).ToHashSet();
+        foreach (var module in course)
+        {
+            Ensure(lessonIds.Contains(module.LessonId), $"Module {module.Id} references missing lesson {module.LessonId}.");
+        }
+    }),
+    ("Lessons have options and feedback", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var lessons = service.GetLessons();
+        foreach (var lesson in lessons)
+        {
+            Ensure(lesson.Options.Count > 0, $"Lesson {lesson.Id} must have at least one option.");
+            Ensure(lesson.Feedback.Count > 0, $"Lesson {lesson.Id} must have at least one feedback item.");
+            Ensure(lesson.Options.Count == lesson.Feedback.Count, $"Lesson {lesson.Id} options and feedback count must match.");
+        }
+    }),
+    ("Lessons and modules have positive duration", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var lessons = service.GetLessons();
+        foreach (var lesson in lessons)
+        {
+            Ensure(lesson.EstimatedMinutes > 0, $"Lesson {lesson.Id} must have positive estimated minutes.");
+        }
+    }),
+    ("No duplicate IDs across lessons and modules", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var lessons = service.GetLessons();
+        var course = service.GetCourse();
+        var lessonIds = lessons.Select(l => l.Id).ToList();
+        var moduleIds = course.Select(m => m.Id).ToList();
+        Ensure(lessonIds.Count == lessonIds.Distinct().Count(), "Duplicate lesson IDs found.");
+        Ensure(moduleIds.Count == moduleIds.Distinct().Count(), "Duplicate module IDs found.");
+        var allIds = lessonIds.Concat(moduleIds).ToList();
+        Ensure(allIds.Count == allIds.Distinct().Count(), "Duplicate IDs found between lessons and modules.");
+    }),
+    ("Each module has required structure: stable ID, name, objective, lesson reference, completion criterion, practical action", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var course = service.GetCourse();
+        foreach (var module in course)
+        {
+            Ensure(!string.IsNullOrWhiteSpace(module.Id), "Module must have stable ID.");
+            Ensure(!string.IsNullOrWhiteSpace(module.Name), "Module must have name.");
+            Ensure(!string.IsNullOrWhiteSpace(module.Objective), "Module must have objective.");
+            Ensure(!string.IsNullOrWhiteSpace(module.LessonId), "Module must have associated lesson ID.");
+            Ensure(!string.IsNullOrWhiteSpace(module.CompletionCriterion), "Module must have completion criterion.");
+            Ensure(!string.IsNullOrWhiteSpace(module.SandboxAction), "Module must have practical sandbox action.");
+        }
+    }),
+    ("Course and lessons endpoints return consistent data for the same lesson", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        var lessons = service.GetLessons();
+        var course = service.GetCourse();
+        var lessonIdsFromCourse = course.Select(m => m.LessonId).Distinct().ToList();
+        foreach (var lessonId in lessonIdsFromCourse)
+        {
+            var lessonFromList = lessons.FirstOrDefault(l => l.Id == lessonId);
+            if (lessonFromList == null) throw new InvalidOperationException($"Lesson {lessonId} referenced in course not found in lessons list.");
+            var lessonFromEndpoint = service.GetLesson(lessonId);
+            Ensure(lessonFromEndpoint.Id == lessonFromList.Id, $"Lesson ID mismatch for {lessonId}.");
+            Ensure(lessonFromEndpoint.Title == lessonFromList.Title, $"Lesson title mismatch for {lessonId}.");
+            Ensure(lessonFromEndpoint.EstimatedMinutes == lessonFromList.EstimatedMinutes, $"Lesson duration mismatch for {lessonId}.");
+        }
     })
 };
 

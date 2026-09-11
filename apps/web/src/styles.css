@@ -13,3 +13,12 @@
 .profile-facts strong{text-align:right;max-width:62%;line-height:1.35}
 .profile-note{color:var(--muted);font-size:.78rem;line-height:1.6;margin:0 0 18px}
 @media(max-width:760px){.profile-facts div{gap:18px;align-items:flex-start}.profile-facts strong{max-width:58%}}
+.vyra-insight{margin:18px 0;padding:15px;border:1px solid rgba(113,212,239,.22);border-radius:15px;background:rgba(255,255,255,.07)}
+.vyra-insight ul{margin:10px 0 12px;padding-left:18px;display:grid;gap:8px}
+.vyra-insight li,.vyra-insight>p{color:#c4d9e2;font-size:.75rem;line-height:1.5}
+.vyra-insight>p{margin:8px 0}
+.vyra-insight small{display:block;color:#91afbc;font-size:.65rem;line-height:1.45}
+.insight-loading{padding:13px;border-radius:13px;background:rgba(22,143,232,.08);color:var(--muted);font-size:.76rem}
+.intervention-modal .vyra-insight{background:rgba(221,241,248,.55);border-color:var(--line)}
+.intervention-modal .vyra-insight li,.intervention-modal .vyra-insight>p{color:var(--ink)}
+.intervention-modal .vyra-insight small{color:var(--muted)}

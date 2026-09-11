@@ -188,7 +188,7 @@ var checks = new (string Name, Action Run)[]
         foreach (var lessonId in lessonIdsFromCourse)
         {
             var lessonFromList = lessons.FirstOrDefault(l => l.Id == lessonId);
-            Ensure(lessonFromList != null, $"Lesson {lessonId} referenced in course not found in lessons list.");
+            if (lessonFromList == null) throw new InvalidOperationException($"Lesson {lessonId} referenced in course not found in lessons list.");
             var lessonFromEndpoint = service.GetLesson(lessonId);
             Ensure(lessonFromEndpoint.Id == lessonFromList.Id, $"Lesson ID mismatch for {lessonId}.");
             Ensure(lessonFromEndpoint.Title == lessonFromList.Title, $"Lesson title mismatch for {lessonId}.");

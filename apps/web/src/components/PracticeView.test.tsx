@@ -6,6 +6,8 @@ import type { PulseProfile } from "../pulse/pulseModel";
 import {
   INITIAL_PRACTICE_SESSION,
   PracticeView,
+  addJourneyEvent,
+  localDecisionScenarios,
   type PracticeSession,
 } from "./PracticeView";
 
@@ -71,6 +73,23 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("PracticeView", () => {
+  it("compares deterministic sell consequences without forecasting", () => {
+    const scenarios = localDecisionScenarios();
+    expect(scenarios.map(item => item.code)).toEqual(["sellAll", "sellHalf", "hold"]);
+    expect(scenarios.find(item => item.code === "sellAll")?.remainingExposure).toBe(0);
+    expect(scenarios.find(item => item.code === "sellHalf")?.cashReleased).toBe(360);
+    expect(scenarios.find(item => item.code === "hold")?.profitLossRecognized).toBe(0);
+  });
+
+  it("awards each educational journey milestone only once", () => {
+    const event = { code: "contextReviewed" as const, title: "Contexto revisado", detail: "Comparaste alternativas.", points: 15 };
+    const first = addJourneyEvent(INITIAL_PRACTICE_SESSION, event);
+    const duplicate = addJourneyEvent(first, event);
+    expect(first.vyraPoints).toBe(15);
+    expect(duplicate.vyraPoints).toBe(15);
+    expect(duplicate.events).toHaveLength(1);
+  });
+
   it("renders a safe uncalibrated state without legacy profile scoring", () => {
     render(<PracticeHarness pulseProfile={null} />);
 
@@ -88,6 +107,9 @@ describe("PracticeView", () => {
     expect(screen.getAllByText("Largo plazo").length).toBeGreaterThan(0);
     expect(screen.getByText("Alta")).toBeInTheDocument();
     expect(screen.getByText("Nuvyra explica y contextualiza. Tú decides.")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /alternativas de venta/i })).toBeInTheDocument();
+    expect(screen.getByText("Tres caminos, sin predicciones")).toBeInTheDocument();
+    expect(screen.getByText("Vender 50 %")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/¿cambió tu objetivo/i)).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: /revisar contexto/i }));

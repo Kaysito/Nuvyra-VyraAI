@@ -42,6 +42,20 @@ internal static class LearningContent
 
     public static readonly IReadOnlyCollection<LessonContract> Lessons =
     [
+        new("lesson.risk", "Riesgo es más que una caída",
+            "Distinguir volatilidad, concentración y capacidad financiera.",
+            "Dos portafolios caen 8 %. Uno mantiene diez activos y dinero disponible; el otro concentra casi todo en una sola moneda.",
+            "El mismo movimiento de precio puede tener consecuencias diferentes. El riesgo también depende de cuánto concentras, cuándo necesitarás el dinero y qué pérdida puedes asumir sin romper tu plan.",
+            "¿Qué revisarías además del porcentaje de caída?",
+            ["Solo si otras personas están vendiendo", "Concentración, horizonte y liquidez", "El nombre de la moneda"],
+            [
+                "La conducta de otras personas no describe tu capacidad ni tu objetivo.",
+                "Correcto: esas tres dimensiones ayudan a contextualizar el impacto de la caída.",
+                "El activo importa, pero su nombre no sustituye el análisis de exposición y plazo."
+            ],
+            "El riesgo combina posibilidad de pérdida, exposición y capacidad para sostener el plan.",
+            3,
+            "Revisar exposición y efectivo disponible en el sandbox."),
         new("lesson.volatility", "Volatilidad no significa fracaso",
             "Distinguir un movimiento de precio de un cambio en el plan.",
             "Compraste un activo pensando en conservarlo tres años. Esta semana cae 18 %. El precio cambió rápidamente, pero tu horizonte no necesariamente cambió.",
@@ -73,15 +87,43 @@ internal static class LearningContent
             ],
             "La diversificación no elimina el riesgo de mercado, pero evita que un solo evento adverso comprometa la totalidad de tu capital.",
             3,
-            "Ejecutar una acción de rebalanceo o diversificación en el sandbox.")
+            "Ejecutar una acción de rebalanceo o diversificación en el sandbox."),
+        new("lesson.biases", "Señales, no etiquetas",
+            "Reconocer patrones observables sin diagnosticar emociones.",
+            "Una persona compra después de una subida rápida, vende tras una caída y más tarde recompra a un precio superior.",
+            "Nuvyra describe la secuencia y su contexto. No afirma que la persona tenga FOMO o pánico; muestra evidencia para que pueda reconocer si esa conducta se repite.",
+            "¿Cuál es una observación responsable?",
+            ["Estabas desesperado", "Vendiste después de una caída de 15 %", "No sabes invertir"],
+            [
+                "Eso atribuye un estado emocional que los datos no pueden demostrar.",
+                "Correcto: describe un hecho verificable sin convertirlo en diagnóstico.",
+                "Una decisión aislada no permite juzgar la capacidad de una persona."
+            ],
+            "Describe acciones y contexto; evita convertir señales en diagnósticos.",
+            3,
+            "Observar las señales registradas durante una caída simulada."),
+        new("lesson.before-sell", "Compara antes de vender",
+            "Contrastar liquidez, exposición y resultado antes de decidir.",
+            "Una posición de $1,000 vale ahora $720. Puedes venderla completa, vender una parte o conservarla.",
+            "Cada alternativa cambia el efectivo disponible, la exposición restante y el resultado que se reconoce. Compararlas no predice el futuro: hace visibles sus consecuencias inmediatas.",
+            "¿Qué comparación es más útil antes de continuar?",
+            ["Cuál botón parece más recomendado", "Efectivo, exposición y resultado de cada alternativa", "Una cifra futura garantizada"],
+            [
+                "La jerarquía visual debe ser neutral y no sustituir el razonamiento.",
+                "Correcto: son consecuencias calculables que permiten decidir con mayor contexto.",
+                "Una inversión no permite garantizar un precio futuro."
+            ],
+            "Nuvyra explica alternativas y consecuencias; la decisión permanece contigo.",
+            3,
+            "Abrir Antes de vender y comparar los tres escenarios.")
     ];
 
     public static readonly IReadOnlyCollection<CourseModuleContract> Course =
     [
-        new("module.risk", "Entender el riesgo", "Identificar que riesgo y pérdida potencial no son lo mismo que fracaso.", "lesson.volatility", "Completar la microlección de volatilidad.", "Registrar una primera decisión virtual y anotar qué dato del escenario la cambió."),
+        new("module.risk", "Entender el riesgo", "Identificar que riesgo y pérdida potencial no son lo mismo que fracaso.", "lesson.risk", "Completar la microlección de riesgo.", "Registrar una primera decisión virtual y anotar qué dato del escenario la cambió."),
         new("module.volatility", "Leer la volatilidad", "Observar movimientos sin convertir una variación diaria en una conclusión automática.", "lesson.volatility", "Comparar una caída simulada con el horizonte elegido.", "Ejecutar una simulación de caída y revisar el porcentaje de movimiento."),
         new("module.position", "Construir una posición", "Entender cómo el tamaño de una posición cambia su peso dentro del portafolio.", "lesson.diversification", "Crear una posición virtual y observar su concentración.", "Comprar una cantidad virtual y revisar el peso de la posición."),
-        new("module.biases", "Reconocer sesgos", "Reconocer señales observables asociadas con FOMO y venta de pánico sin atribuir estados emocionales.", "lesson.volatility", "Identificar al menos una señal observable en un caso simulado.", "Revisar una compra después de una subida o una venta después de una caída."),
-        new("module.practice", "Practicar antes de decidir", "Usar contexto, evidencia y horizonte antes de continuar una operación.", "lesson.volatility", "Elegir esperar, revisar evidencia o continuar en una intervención.", "Abrir 'Antes de vender', revisar las métricas y registrar una decisión.")
+        new("module.biases", "Reconocer sesgos", "Reconocer señales observables asociadas con FOMO y venta de pánico sin atribuir estados emocionales.", "lesson.biases", "Identificar al menos una señal observable en un caso simulado.", "Revisar una compra después de una subida o una venta después de una caída."),
+        new("module.practice", "Practicar antes de decidir", "Usar contexto, evidencia y horizonte antes de continuar una operación.", "lesson.before-sell", "Elegir esperar, revisar evidencia o continuar en una intervención.", "Abrir 'Antes de vender', revisar las métricas y registrar una decisión.")
     ];
 }

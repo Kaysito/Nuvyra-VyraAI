@@ -23,6 +23,27 @@ export type QuoteResponse = {
   source: string;
 };
 
+export type DecisionScenarioResponse = {
+  code: "sellAll" | "sellHalf" | "hold";
+  label: string;
+  cashReleased: number;
+  remainingExposure: number;
+  profitLossRecognized: number;
+  context: string;
+};
+
+export type InterventionResponse = {
+  id: string;
+  symbol: string;
+  currentLossPercent: number;
+  explanation: string;
+  observedSignals: string[];
+  scenarios: DecisionScenarioResponse[];
+  alternatives: string[];
+  choice: string | null;
+  createdAt: string;
+};
+
 export type VyraInsightResponse = {
   id: string;
   title: string;
@@ -100,6 +121,7 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): P
         error.traceId,
       );
     }
+    if (response.status === 204) return undefined as T;
     return await response.json() as T;
   } catch (error) {
     if (error instanceof ApiClientError) throw error;
@@ -123,6 +145,23 @@ export const apiClient = {
   getLessons: () => request<Lesson[]>("/api/learn/lessons"),
   getCourse: () => request<CourseModule[]>("/api/learn/course"),
   getPortfolio: () => request<unknown>("/api/sandbox/portfolio"),
+  buyVirtual: (symbol: string, amount: number) => request<unknown>("/api/sandbox/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol, amount }),
+  }),
+  simulateCrash: () => request<void>("/api/demo/crash", { method: "POST" }),
+  resetDemo: () => request<void>("/api/demo/reset", { method: "POST" }),
+  beforeSell: (symbol: string) => request<InterventionResponse>("/api/decisions/before-sell", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol }),
+  }),
+  recordDecision: (id: string, choice: string) => request<InterventionResponse>(`/api/decisions/${id}/choice`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ choice }),
+  }),
   assessProfile: (profile: ProfileAssessmentRequest) => request<ProfileResponse>("/api/profiles/assessment", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

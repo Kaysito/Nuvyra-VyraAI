@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { apiClient, type CourseModule, type Lesson } from "../services/apiClient";
 
-export function LearnView({ onPractice }: { onPractice: () => void }) {
-  const [lesson, setLesson] = useState<Lesson | null>(null);
+export function LearnView({ onPractice, completedLessonIds = [], onComplete = () => undefined }: { onPractice: () => void; completedLessonIds?: string[]; onComplete?: (lessonId: string) => void }) {
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [course, setCourse] = useState<CourseModule[]>([]);
   const [answer, setAnswer] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,7 +15,8 @@ export function LearnView({ onPractice }: { onPractice: () => void }) {
       apiClient.getCourse(),
     ])
       .then(([lessons, modules]) => {
-        setLesson(lessons[0] ?? null);
+        setLessons(lessons);
+        setSelectedLessonId(lessons[0]?.id ?? null);
         setCourse(modules ?? []);
       })
       .catch(() => setError("No pudimos cargar el contenido de aprendizaje."))
@@ -23,7 +25,10 @@ export function LearnView({ onPractice }: { onPractice: () => void }) {
 
   if (error) return <div className="page narrow-page"><p role="alert">{error}</p></div>;
   if (isLoading) return <div className="page narrow-page"><p role="status">Cargando microlección…</p></div>;
+  const lesson = lessons.find(item => item.id === selectedLessonId) ?? lessons[0] ?? null;
   if (!lesson) return <div className="page narrow-page"><p role="status">No hay microlecciones disponibles.</p></div>;
+  const completedModules = course.filter(module => completedLessonIds.includes(module.lessonId)).length;
+  const progress = course.length === 0 ? 0 : Math.round(completedModules / course.length * 100);
 
   return <div className="page learn-page">
     <header className="page-heading split">
@@ -34,34 +39,37 @@ export function LearnView({ onPractice }: { onPractice: () => void }) {
       </div>
       <div className="lesson-progress glass-card">
         <span>PROGRESO DEL CAMINO</span>
-        <b>20%</b>
+        <b>{progress}%</b>
         <div
           className="meter"
           role="progressbar"
           aria-label="Progreso de aprendizaje"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={20}
+          aria-valuenow={progress}
         >
-          <i style={{ width: "20%" }} />
+          <i style={{ width: `${progress}%` }} />
         </div>
       </div>
     </header>
 
     <section className="journey-grid" aria-label="Módulos del curso">
       {course.map((module, index) =>
-        <article className={`journey-card glass-card ${index === 0 ? "featured" : ""}`} key={module.id}>
+        <article className={`journey-card glass-card ${module.lessonId === lesson.id ? "featured" : ""}`} key={module.id}>
           <span className="journey-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
           <h3>{module.name}</h3>
           <p>{module.objective}</p>
           <small>{module.sandboxAction}</small>
+          <button type="button" className="text-button" aria-pressed={module.lessonId === lesson.id} onClick={() => { setSelectedLessonId(module.lessonId); setAnswer(null); }}>
+            {completedLessonIds.includes(module.lessonId) ? "Repasar módulo" : "Abrir módulo"} <span aria-hidden="true">→</span>
+          </button>
         </article>
       )}
     </section>
 
     <section className="lesson-layout">
       <article className="glass-card lesson-story">
-        <span className="lesson-index" aria-hidden="true">01</span>
+        <span className="lesson-index" aria-hidden="true">{String(course.findIndex(module => module.lessonId === lesson.id) + 1).padStart(2, "0")}</span>
         <p className="micro-label">ESCENARIO</p>
         <h2>{lesson.scenario}</h2>
         <p>{lesson.explanation}</p>
@@ -88,9 +96,10 @@ export function LearnView({ onPractice }: { onPractice: () => void }) {
             <p>{lesson.feedback[answer]}</p>
           </div>
         }
-        <button type="button" className="button primary full" onClick={onPractice} disabled={answer === null}>
+        <button type="button" className="button primary full" onClick={() => { onComplete(lesson.id); onPractice(); }} disabled={answer === null}>
           Practicar este concepto →
         </button>
+        {completedLessonIds.includes(lesson.id) && <div className="points-earned" role="status"><span aria-hidden="true">✦</span><strong>+15 VyraPoints</strong><small>Microlección completada</small></div>}
         <small className="guide-disclaimer">{lesson.keyLearning}</small>
       </aside>
     </section>

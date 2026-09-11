@@ -45,6 +45,34 @@ describe("apiClient", () => {
     }));
   });
 
+  it("uses the sandbox decision endpoints with explicit JSON contracts", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response({ symbol: "BTC" }))
+      .mockResolvedValueOnce(response(undefined, true, 204))
+      .mockResolvedValueOnce(response({ id: "decision-1", scenarios: [] }))
+      .mockResolvedValueOnce(response({ id: "decision-1", choice: "ReviewEvidence" }))
+      .mockResolvedValueOnce(response(undefined, true, 204));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiClient.buyVirtual("BTC", 1_000);
+    await apiClient.simulateCrash();
+    await apiClient.beforeSell("BTC");
+    await apiClient.recordDecision("decision-1", "ReviewEvidence");
+    await apiClient.resetDemo();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/sandbox/orders", expect.objectContaining({
+      method: "POST", body: JSON.stringify({ symbol: "BTC", amount: 1_000 }),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/demo/crash", expect.objectContaining({ method: "POST" }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, "/api/decisions/before-sell", expect.objectContaining({
+      method: "POST", body: JSON.stringify({ symbol: "BTC" }),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, "/api/decisions/decision-1/choice", expect.objectContaining({
+      method: "POST", body: JSON.stringify({ choice: "ReviewEvidence" }),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(5, "/api/demo/reset", expect.objectContaining({ method: "POST" }));
+  });
+
   it("normalizes API errors without exposing implementation details", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({
       code: "validation_error",

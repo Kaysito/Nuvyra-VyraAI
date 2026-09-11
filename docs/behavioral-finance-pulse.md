@@ -65,7 +65,9 @@ Las cinco preguntas están diseñadas para responderse en menos de 90 segundos.
 
 La API recibe exactamente cinco valores en `ProfileAssessmentRequest.answers`.
 
-### Puntuaciones internas
+> **Documento histórico parcialmente reemplazado por `pulse-v1`.** Las fórmulas y contratos de puntuación que aparecen debajo se conservan únicamente como registro de una propuesta anterior. No deben implementarse. La fuente vigente mantiene `experience`, `riskDisposition`, `horizon`, `objective` y `pressureResponse` como dimensiones independientes y utiliza señales observables sin diagnósticos.
+
+### Puntuaciones internas descartadas
 
 - Reacción a pérdida: `sell=80`, `review=40`, `hold=20`.
 - Incertidumbre: `low=20`, `medium=50`, `high=80`.
@@ -258,7 +260,7 @@ La intervención informativa se muestra para niveles `Medio` y `Alto`. El nivel 
 
 ## 6. Contratos API/frontend
 
-### `ProfileResult`
+### `ProfileResult` descartado
 
 ```json
 {

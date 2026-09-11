@@ -6,7 +6,7 @@ import {
   getObjectiveLabel,
   getRiskDispositionLabel,
 } from "../pulse/pulsePresentation";
-import { apiClient, type QuoteResponse, type VyraInsightResponse } from "../services/apiClient";
+import { apiClient, type DecisionScenarioResponse, type InterventionResponse, type QuoteResponse, type VyraInsightResponse } from "../services/apiClient";
 
 type PracticeAsset = {
   symbol: PracticeAssetSymbol;
@@ -25,6 +25,9 @@ const assets: readonly PracticeAsset[] = [
 export type PracticeAssetSymbol = "BTC" | "ETH" | "SOL";
 export type PracticeDecision = "wait24Hours" | "reviewEvidence" | "continueSale";
 
+export type PracticeEventCode = "positionCreated" | "crashObserved" | "contextReviewed" | "decisionRecorded";
+export type PracticeEvent = { code: PracticeEventCode; title: string; detail: string; points: number; observedAt: string };
+
 const decisionMessages: Record<PracticeDecision, string> = {
   wait24Hours: "Elegiste esperar 24 horas",
   reviewEvidence: "Elegiste revisar contexto",
@@ -35,24 +38,48 @@ export interface PracticeSession {
   boughtSymbol: PracticeAssetSymbol | null;
   crash: boolean;
   decision: PracticeDecision | null;
+  events?: PracticeEvent[];
+  vyraPoints?: number;
 }
 
 export const INITIAL_PRACTICE_SESSION: PracticeSession = {
   boughtSymbol: null,
   crash: false,
   decision: null,
+  events: [],
+  vyraPoints: 0,
 };
+
+export function addJourneyEvent(session: PracticeSession, event: Omit<PracticeEvent, "observedAt">): PracticeSession {
+  const events = session.events ?? [];
+  if (events.some(item => item.code === event.code)) return session;
+  return {
+    ...session,
+    events: [...events, { ...event, observedAt: new Date().toISOString() }],
+    vyraPoints: (session.vyraPoints ?? 0) + event.points,
+  };
+}
+
+export function localDecisionScenarios(): DecisionScenarioResponse[] {
+  return [
+    { code: "sellAll", label: "Vender todo", cashReleased: 720, remainingExposure: 0, profitLossRecognized: -280, context: "Convierte toda la posición virtual en efectivo y reconoce la pérdida del escenario." },
+    { code: "sellHalf", label: "Vender 50 %", cashReleased: 360, remainingExposure: 360, profitLossRecognized: -140, context: "Reduce la exposición y mantiene la mitad de la posición virtual." },
+    { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 720, profitLossRecognized: 0, context: "Conserva la exposición completa; la pérdida continúa sin realizarse." },
+  ];
+}
 
 export function PracticeView({
   mode,
   profile,
   session,
   onSessionChange,
+  totalVyraPoints,
 }: {
   mode: "practice" | "market" | "portfolio";
   profile: PulseProfile | null;
   session: PracticeSession;
   onSessionChange: (session: PracticeSession) => void;
+  totalVyraPoints?: number;
 }) {
   const [intervention, setIntervention] = useState(false);
   const [marketAssets, setMarketAssets] = useState<readonly PracticeAsset[]>(assets);
@@ -61,6 +88,8 @@ export function PracticeView({
   const [selectedSymbol, setSelectedSymbol] = useState<PracticeAssetSymbol>("BTC");
   const [insight, setInsight] = useState<VyraInsightResponse | null>(null);
   const [insightState, setInsightState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [interventionData, setInterventionData] = useState<InterventionResponse | null>(null);
+  const [sandboxBusy, setSandboxBusy] = useState(false);
   const interventionTrigger = useRef<HTMLButtonElement>(null);
   const bought = session.boughtSymbol !== null;
   const scenarioActive = session.crash && mode !== "market";
@@ -107,6 +136,27 @@ export function PracticeView({
     onSessionChange({ ...session, ...patch });
   };
 
+  const createVirtualPosition = async (asset: PracticeAsset) => {
+    setSandboxBusy(true);
+    try {
+      await apiClient.resetDemo();
+      await apiClient.buyVirtual(asset.symbol, 1_000);
+    } catch { /* The visible demo remains available offline. */ }
+    onSessionChange(addJourneyEvent({ ...session, boughtSymbol: asset.symbol }, {
+      code: "positionCreated", title: "Posición virtual creada", detail: `Invertiste $1,000 virtuales en ${asset.symbol}.`, points: 10,
+    }));
+    setSandboxBusy(false);
+  };
+
+  const activateCrash = async () => {
+    setSandboxBusy(true);
+    try { await apiClient.simulateCrash(); } catch { /* Use the deterministic local scenario. */ }
+    onSessionChange(addJourneyEvent({ ...session, crash: true }, {
+      code: "crashObserved", title: "Caída observada", detail: "Revisaste un movimiento de −28 % sin dinero real.", points: 10,
+    }));
+    setSandboxBusy(false);
+  };
+
   const generateInsight = (
     symbol: PracticeAssetSymbol,
     intendedAction: "explore" | "sell",
@@ -149,6 +199,11 @@ export function PracticeView({
         negative={scenarioActive}
       />
       <Stat
+        label="VYRAPOINTS"
+        value={`${totalVyraPoints ?? session.vyraPoints ?? 0} VP`}
+        delta="Premian aprendizaje y reflexión, nunca ganancias"
+      />
+      <Stat
         label="EFECTIVO DISPONIBLE"
         value={bought ? "$9,000.00" : "$10,000.00"}
         delta={bought ? "$1,000 invertidos" : "Listo para practicar"}
@@ -167,9 +222,9 @@ export function PracticeView({
           {mode === "practice" && <button
             type="button"
             className="button subtle"
-            onClick={() => updateSession({ crash: true })}
-            disabled={!bought || session.crash}
-          >Simular caída</button>}
+            onClick={activateCrash}
+            disabled={!bought || session.crash || sandboxBusy}
+          >{sandboxBusy ? "Preparando…" : "Simular caída"}</button>}
         </div>
         <div className="asset-table">
           <div className="asset-head" aria-hidden="true"><span>Activo</span><span>Precio</span><span>24 h</span><span>Riesgo</span><span/></div>
@@ -194,10 +249,10 @@ export function PracticeView({
                 type="button"
                 className="row-action"
                 aria-label={session.boughtSymbol === asset.symbol ? `${asset.name} en portafolio` : `Practicar con ${asset.name}`}
-                onClick={() => updateSession({ boughtSymbol: asset.symbol })}
-                disabled={bought}
+                onClick={() => createVirtualPosition(asset)}
+                disabled={bought || sandboxBusy}
               >
-                {session.boughtSymbol === asset.symbol ? "En portafolio" : "Practicar"}
+                {sandboxBusy && !bought ? "Preparando…" : session.boughtSymbol === asset.symbol ? "En portafolio" : "Practicar"}
               </button>}
           </div>)}
         </div>
@@ -228,12 +283,21 @@ export function PracticeView({
           disabled={!scenarioActive}
           onClick={() => {
             generateInsight(session.boughtSymbol ?? "BTC", "sell", "sandbox", "crash");
+            setInterventionData(null);
+            apiClient.beforeSell(session.boughtSymbol ?? "BTC")
+              .then(result => { if (Array.isArray(result.scenarios)) setInterventionData(result); })
+              .catch(() => undefined);
+            onSessionChange(addJourneyEvent(session, {
+              code: "contextReviewed", title: "Contexto revisado", detail: "Abriste Antes de vender y comparaste alternativas.", points: 15,
+            }));
             setIntervention(true);
           }}
         >Antes de vender →</button>}
         <small className="guide-disclaimer">Nuvyra explica y contextualiza. Tú decides.</small>
       </aside>
     </section>
+
+    {mode !== "market" && (session.events?.length ?? 0) > 0 && <DecisionJourney events={session.events ?? []} />}
 
     {session.decision && <div className="decision-toast" role="status" aria-live="polite">
       <span aria-hidden="true">✓</span>
@@ -245,14 +309,36 @@ export function PracticeView({
       horizon={horizon}
       insight={insight}
       insightState={insightState}
+      scenarios={interventionData?.scenarios ?? localDecisionScenarios()}
       returnFocusRef={interventionTrigger}
       onClose={() => setIntervention(false)}
       onChoose={value => {
-        updateSession({ decision: value });
+        if (interventionData) apiClient.recordDecision(interventionData.id, decisionApiCode(value)).catch(() => undefined);
+        onSessionChange(addJourneyEvent({ ...session, decision: value }, {
+          code: "decisionRecorded", title: "Decisión consciente registrada", detail: decisionMessages[value] + ".", points: value === "continueSale" ? 10 : 20,
+        }));
         setIntervention(false);
       }}
     />}
   </div>;
+}
+
+function decisionApiCode(value: PracticeDecision) {
+  if (value === "wait24Hours") return "Wait24Hours";
+  if (value === "reviewEvidence") return "ReviewEvidence";
+  return "ContinueSale";
+}
+
+function DecisionJourney({ events }: { events: PracticeEvent[] }) {
+  return <section className="glass-card decision-journey" aria-labelledby="journey-title">
+    <div className="panel-header"><div><p className="micro-label">PERFIL PROGRESIVO</p><h2 id="journey-title">Tu recorrido de decisiones</h2></div><span className="journey-count">{events.length} {events.length === 1 ? "señal observable" : "señales observables"}</span></div>
+    <ol>{events.map(event => <li key={event.code}>
+      <span className="journey-dot" aria-hidden="true">✓</span>
+      <div><strong>{event.title}</strong><p>{event.detail}</p></div>
+      <b>+{event.points} VP</b>
+    </li>)}</ol>
+    <small>No diagnosticamos emociones. Este historial describe únicamente acciones realizadas dentro del sandbox.</small>
+  </section>;
 }
 
 function InsightSummary({ insight }: { insight: VyraInsightResponse }) {
@@ -324,6 +410,7 @@ function Intervention({
   horizon,
   insight,
   insightState,
+  scenarios,
   returnFocusRef,
   onClose,
   onChoose,
@@ -331,6 +418,7 @@ function Intervention({
   horizon: string;
   insight: VyraInsightResponse | null;
   insightState: "idle" | "loading" | "ready" | "error";
+  scenarios: DecisionScenarioResponse[];
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   onChoose: (value: PracticeDecision) => void;
@@ -366,6 +454,19 @@ function Intervention({
       {insightState === "loading" && <p className="insight-loading" role="status">VyraAI está contrastando el escenario con tu pulso…</p>}
       {insightState === "error" && <p className="insight-loading" role="status">No pudimos generar contexto adicional. Tú conservas el control de la decisión.</p>}
       {insightState === "ready" && insight && <InsightSummary insight={insight} />}
+      <div className="scenario-heading"><div><p className="micro-label">COMPARA CONSECUENCIAS</p><h3>Tres caminos, sin predicciones</h3></div><small>Valores calculados sobre $1,000 virtuales después de la caída.</small></div>
+      <div className="scenario-grid" role="group" aria-label="Alternativas de venta">
+        {scenarios.map(scenario => <article key={scenario.code} className="scenario-card">
+          <span>{scenario.label}</span>
+          <strong>{formatMarketPrice(scenario.cashReleased)}</strong>
+          <small>Efectivo liberado</small>
+          <dl>
+            <div><dt>Exposición restante</dt><dd>{formatMarketPrice(scenario.remainingExposure)}</dd></div>
+            <div><dt>Resultado reconocido</dt><dd className={scenario.profitLossRecognized < 0 ? "negative" : ""}>{formatSignedMoney(scenario.profitLossRecognized)}</dd></div>
+          </dl>
+          <p>{scenario.context}</p>
+        </article>)}
+      </div>
       <div className="decision-actions">
         <button type="button" className="button secondary" onClick={() => onChoose("wait24Hours")}>Esperar 24 horas</button>
         <button type="button" className="button secondary" onClick={() => onChoose("reviewEvidence")}>Revisar contexto</button>
@@ -374,4 +475,9 @@ function Intervention({
       <small className="modal-note">No hay temporizador ni bloqueo. El objetivo es darte contexto, no controlar tu operación.</small>
     </section>
   </dialog>;
+}
+
+function formatSignedMoney(value: number) {
+  if (value === 0) return "$0.00";
+  return `${value > 0 ? "+" : "−"}${formatMarketPrice(Math.abs(value))}`;
 }

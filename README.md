@@ -6,11 +6,13 @@ Nuvyra es un laboratorio de decisiones financieras: permite practicar con dinero
 
 ## Primera experiencia demostrable
 
-1. Evaluar experiencia, tolerancia al riesgo y riesgo conductual por separado.
+1. Crear un pulso provisional con cinco dimensiones independientes, sin puntuación psicológica global.
 2. Comprar un activo con saldo virtual.
 3. Simular una caída intensa del mercado.
 4. Activar **Antes de vender**, una intervención explicable que no bloquea al usuario.
 5. Registrar la decisión para construir aprendizaje posterior.
+6. Comparar consecuencias de vender todo, vender parcialmente o mantener, sin presentar predicciones como certezas.
+7. Reconocer el recorrido con VyraPoints que premian aprendizaje y reflexión, nunca rentabilidad u operaciones frecuentes.
 
 ## Arquitectura
 

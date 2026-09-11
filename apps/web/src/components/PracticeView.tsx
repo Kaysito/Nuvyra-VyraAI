@@ -39,11 +39,15 @@ export function PracticeView({
   profile,
   session,
   onSessionChange,
+  onPositionCreated,
+  onDecisionCompleted,
 }: {
   mode: "practice" | "market" | "portfolio";
   profile: PulseProfile | null;
   session: PracticeSession;
   onSessionChange: (session: PracticeSession) => void;
+  onPositionCreated?: () => void;
+  onDecisionCompleted?: () => void;
 }) {
   const [intervention, setIntervention] = useState(false);
   const interventionTrigger = useRef<HTMLButtonElement>(null);
@@ -118,7 +122,10 @@ export function PracticeView({
                 type="button"
                 className="row-action"
                 aria-label={session.boughtSymbol === asset.symbol ? `${asset.name} en portafolio` : `Practicar con ${asset.name}`}
-                onClick={() => updateSession({ boughtSymbol: asset.symbol })}
+                 onClick={() => {
+                   updateSession({ boughtSymbol: asset.symbol });
+                   onPositionCreated?.();
+                 }}
                 disabled={bought}
               >
                 {session.boughtSymbol === asset.symbol ? "En portafolio" : "Practicar"}
@@ -160,9 +167,10 @@ export function PracticeView({
       horizon={horizon}
       returnFocusRef={interventionTrigger}
       onClose={() => setIntervention(false)}
-      onChoose={value => {
-        updateSession({ decision: value });
-        setIntervention(false);
+       onChoose={value => {
+         updateSession({ decision: value });
+         onDecisionCompleted?.();
+         setIntervention(false);
       }}
     />}
   </div>;

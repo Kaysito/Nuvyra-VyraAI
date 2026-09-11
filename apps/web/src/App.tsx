@@ -2,6 +2,16 @@ import { useState } from "react";
 import { AppShell, type Page } from "./components/AppShell";
 import { LearnView } from "./components/LearnView";
 import { INITIAL_PRACTICE_SESSION, PracticeView, type PracticeSession } from "./components/PracticeView";
+import { VyraPointsCard } from "./components/VyraPointsCard";
+import {
+  awardPoints,
+  INITIAL_VYRA_POINTS_STATE,
+  LESSON_COMPLETED,
+  PRACTICE_DECISION_COMPLETED,
+  PRACTICE_POSITION_CREATED,
+  PULSE_COMPLETED,
+  type VyraPointsState,
+} from "./demo/vyraPoints";
 import { PulseV1View } from "./pulse/PulseV1View";
 import type { PulseProfile } from "./pulse/pulseModel";
 import {
@@ -16,7 +26,15 @@ export function App() {
   const [page, setPage] = useState<Page>("Inicio");
   const [profile, setProfile] = useState<PulseProfile | null>(null);
   const [practiceSession, setPracticeSession] = useState<PracticeSession>(() => ({ ...INITIAL_PRACTICE_SESSION }));
+  const [vyraPoints, setVyraPoints] = useState<VyraPointsState>(() => ({
+    points: INITIAL_VYRA_POINTS_STATE.points,
+    awardedActions: new Set(INITIAL_VYRA_POINTS_STATE.awardedActions),
+  }));
   const pulseComplete = profile !== null;
+
+  const award = (actionId: string, amount: number) => {
+    setVyraPoints(state => awardPoints(state, actionId, amount));
+  };
 
   const navigate = (nextPage: Page) => {
     setPage(nextPage);
@@ -25,6 +43,7 @@ export function App() {
   };
 
   const finishPulse = (result: PulseProfile) => {
+    award("pulse:completed", PULSE_COMPLETED);
     setProfile(result);
     navigate("Aprende");
   };
@@ -35,13 +54,24 @@ export function App() {
     {page === "Inicio" && <HomeView
       pulseComplete={pulseComplete}
       profile={profile}
+      points={vyraPoints.points}
       onStart={() => navigate(pulseComplete ? "Practica" : "Pulso")}
       onLearn={() => navigate("Aprende")}
       onMarket={() => navigate("Mercado")}
     />}
     {page === "Pulso" && <PulseV1View onComplete={finishPulse} />}
-    {page === "Aprende" && <LearnView onPractice={() => navigate("Practica")} />}
-    {page === "Practica" && <PracticeView mode="practice" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
+    {page === "Aprende" && <LearnView
+      onPractice={() => navigate("Practica")}
+      onLessonComplete={lessonId => award(`lesson:${lessonId}:completed`, LESSON_COMPLETED)}
+    />}
+    {page === "Practica" && <PracticeView
+      mode="practice"
+      profile={profile}
+      session={practiceSession}
+      onSessionChange={setPracticeSession}
+      onPositionCreated={() => award("practice:first-position", PRACTICE_POSITION_CREATED)}
+      onDecisionCompleted={() => award("practice:first-decision", PRACTICE_DECISION_COMPLETED)}
+    />}
     {page === "Mercado" && <PracticeView mode="market" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
     {page === "Portafolio" && <PracticeView mode="portfolio" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
     {page === "Perfil" && <ProfileView profile={profile} onRetake={() => navigate("Pulso")} />}
@@ -51,12 +81,14 @@ export function App() {
 function HomeView({
   pulseComplete,
   profile,
+  points,
   onStart,
   onLearn,
   onMarket,
 }: {
   pulseComplete: boolean;
   profile: PulseProfile | null;
+  points: number;
   onStart: () => void;
   onLearn: () => void;
   onMarket: () => void;
@@ -103,6 +135,7 @@ function HomeView({
         </div>
       </div>
     </section>
+    <VyraPointsCard points={points} />
     <section className="journey-section reveal delay-2">
       <div className="section-heading">
         <div>

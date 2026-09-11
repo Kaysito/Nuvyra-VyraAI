@@ -53,12 +53,16 @@ async function completePulse() {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /calibrar mi perfil/i }));
 
+  await answerPulse(user);
+  return user;
+}
+
+async function answerPulse(user: ReturnType<typeof userEvent.setup>) {
   for (const question of PULSE_QUESTIONS) {
     const option = question.options.find(candidate => candidate.value === answers[question.dimension]);
     if (!option) throw new Error(`Missing test option for ${question.dimension}`);
     await user.click(screen.getByRole("button", { name: new RegExp(escapeRegExp(option.label), "i") }));
   }
-  return user;
 }
 
 function desktopNavigation() {
@@ -70,6 +74,8 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /tu dinero merece una perspectiva más clara/i })).toBeInTheDocument();
     expect(screen.getByText("Sin calibrar")).toBeInTheDocument();
+    expect(screen.getByText("0 pts")).toBeInTheDocument();
+    expect(screen.getByText("Nivel 1")).toBeInTheDocument();
     expect(screen.queryByText(/claridad inicial/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/claridad del perfil/i)).not.toBeInTheDocument();
   });
@@ -115,6 +121,49 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: PULSE_QUESTIONS[0].question })).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "1");
   });
+
+  it("does not repeat the Pulse reward after recalibration", async () => {
+    render(<App />);
+    const user = await completePulse();
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+    expect(screen.getByText("50 pts")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /ver perfil/i }));
+    await user.click(screen.getByRole("button", { name: /recalibrar mi perfil/i }));
+    await answerPulse(user);
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+
+    expect(screen.getByText("50 pts")).toBeInTheDocument();
+  });
+
+  it("awards the complete demo journey and advances to level two", async () => {
+    render(<App />);
+    const user = await completePulse();
+
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+    await user.click(screen.getByRole("button", { name: /ver lección/i }));
+    await user.click(await screen.findByRole("button", { name: learningLesson.options[1] }));
+    await user.click(screen.getByRole("button", { name: /practicar este concepto/i }));
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+    expect(screen.getByText("75 pts")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /ir al laboratorio/i }));
+    await user.click(screen.getByRole("button", { name: /practicar con bitcoin/i }));
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+    expect(screen.getByText("85 pts")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /ir al laboratorio/i }));
+    await user.click(screen.getByRole("button", { name: /simular caída/i }));
+    await user.click(screen.getByRole("button", { name: /antes de vender/i }));
+    await user.click(screen.getByRole("button", { name: /esperar 24 horas/i }));
+    await user.click(screen.getByRole("button", { name: /antes de vender/i }));
+    await user.click(screen.getByRole("button", { name: /revisar contexto/i }));
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+
+    expect(screen.getByText("100 pts")).toBeInTheDocument();
+    expect(screen.getByText("Nivel 2")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+  }, 15000);
 
   it("uses the completed pulse as context in the practice sandbox without a clarity score", async () => {
     render(<App />);

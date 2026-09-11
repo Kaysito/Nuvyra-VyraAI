@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { apiClient, type CourseModule, type Lesson } from "../services/apiClient";
 
-export function LearnView({ onPractice }: { onPractice: () => void }) {
+export function LearnView({ onPractice, onLessonComplete }: {
+  onPractice: () => void;
+  onLessonComplete?: (lessonId: string) => void;
+}) {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [course, setCourse] = useState<CourseModule[]>([]);
   const [answer, setAnswer] = useState<number | null>(null);
@@ -88,7 +91,10 @@ export function LearnView({ onPractice }: { onPractice: () => void }) {
             <p>{lesson.feedback[answer]}</p>
           </div>
         }
-        <button type="button" className="button primary full" onClick={onPractice} disabled={answer === null}>
+        <button type="button" className="button primary full" onClick={() => {
+          onLessonComplete?.(lesson.id);
+          onPractice();
+        }} disabled={answer === null}>
           Practicar este concepto →
         </button>
         <small className="guide-disclaimer">{lesson.keyLearning}</small>

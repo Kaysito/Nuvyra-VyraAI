@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PulseProfile } from "../pulse/pulseModel";
 import {
   INITIAL_PRACTICE_SESSION,
@@ -41,6 +41,17 @@ async function openIntervention() {
   await user.click(trigger);
   return { user, trigger };
 }
+
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve([
+      { symbol: "BTC", name: "Bitcoin", price: 70000, change24Hours: 3.1, volatilityScore: 72, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
+      { symbol: "ETH", name: "Ethereum", price: 3500, change24Hours: -1.2, volatilityScore: 79, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
+      { symbol: "SOL", name: "Solana", price: 180, change24Hours: 4.8, volatilityScore: 88, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
+    ]),
+  }));
+});
 
 describe("PracticeView", () => {
   it("renders a safe uncalibrated state without legacy profile scoring", () => {
@@ -99,22 +110,32 @@ describe("PracticeView", () => {
     expect(trigger).toHaveFocus();
   });
 
-  it("keeps market mode informational and isolates it from the sandbox crash", () => {
+  it("shows live market data and isolates it from the sandbox crash", async () => {
     render(<PracticeHarness
       mode="market"
       initialSession={{ boughtSymbol: "ETH", crash: true, decision: null }}
     />);
 
     expect(screen.getByRole("heading", { name: /mercado con contexto/i })).toBeInTheDocument();
-    expect(screen.getByText(/datos simulados de referencia/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("MERCADO · EN VIVO")).toBeInTheDocument());
+    expect(screen.getByText(/cotizaciones de coingecko/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /simular caída/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /practicar con bitcoin/i })).not.toBeInTheDocument();
     expect(screen.getAllByText("Solo referencia")).toHaveLength(3);
     expect(screen.queryByText("−28.0%")).not.toBeInTheDocument();
-    expect(screen.getByText("+2.4%")).toBeInTheDocument();
-    expect(screen.getByText("-1.8%")).toBeInTheDocument();
-    expect(screen.getByText("+5.2%")).toBeInTheDocument();
+    expect(screen.getByText("+3.1%")).toBeInTheDocument();
+    expect(screen.getByText("-1.2%")).toBeInTheDocument();
+    expect(screen.getByText("+4.8%")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /antes de vender/i })).toBeDisabled();
+  });
+
+  it("identifies local fallback data when the market API is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+    render(<PracticeHarness mode="market" />);
+
+    await waitFor(() => expect(screen.getByText("MERCADO · DEMO")).toBeInTheDocument());
+    expect(screen.getByText(/proveedor externo no está disponible/i)).toBeInTheDocument();
+    expect(screen.getByText("+2.4%")).toBeInTheDocument();
   });
 
   it("renders a previously created virtual position in portfolio mode", () => {

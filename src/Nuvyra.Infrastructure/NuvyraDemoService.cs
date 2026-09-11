@@ -111,9 +111,25 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             var position = _portfolio.Positions.SingleOrDefault(item => item.Symbol.Equals(quote.Symbol, StringComparison.OrdinalIgnoreCase))
                 ?? throw new KeyNotFoundException("Position not found.");
             var loss = position.ReturnPercent(quote.Price);
-            var urgency = Math.Clamp((int)Math.Abs(Math.Min(loss, 0)) * 2 + quote.VolatilityScore / 2, 0, 100);
-            var intervention = new DecisionIntervention(Guid.NewGuid(), quote.Symbol, loss, urgency,
+            var currentValue = position.Quantity * quote.Price;
+            var costBasis = position.Quantity * position.AveragePrice;
+            var profitLoss = currentValue - costBasis;
+            var observedSignals = new List<string>();
+            if (quote.Change24Hours <= -10) observedSignals.Add("sharpDrop");
+            if (loss < 0) observedSignals.Add("positionAtLoss");
+            observedSignals.Add("fullLiquidationIntent");
+            var scenarios = new DecisionScenario[]
+            {
+                new("sellAll", "Vender todo", Money(currentValue), 0m, Money(profitLoss),
+                    "Convierte toda la posición en efectivo y reconoce el resultado virtual acumulado."),
+                new("sellHalf", "Vender 50 %", Money(currentValue / 2m), Money(currentValue / 2m), Money(profitLoss / 2m),
+                    "Reduce la exposición y conserva la mitad de la posición virtual."),
+                new("hold", "Mantener", 0m, Money(currentValue), 0m,
+                    "No genera efectivo ni reconoce la pérdida; conserva toda la exposición al mercado.")
+            };
+            var intervention = new DecisionIntervention(Guid.NewGuid(), quote.Symbol, loss,
                 "El mercado cayó con fuerza. Antes de vender, separa el movimiento del mercado de tu plan original. Nuvyra no bloquea tu decisión: te ayuda a verla con perspectiva.",
+                observedSignals, scenarios,
                 [DecisionChoice.Wait24Hours, DecisionChoice.ReviewEvidence, DecisionChoice.ContinueSale], DateTimeOffset.UtcNow);
             _interventions[intervention.Id] = intervention;
             return ToResponse(intervention);
@@ -141,6 +157,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
     }
 
     private MarketQuote Quote(string symbol) => _marketData.GetQuote(symbol);
+    private static decimal Money(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
     private static bool TryParseCode<T>(string? value, out T result) where T : struct, Enum
     {
         result = default;
@@ -150,5 +167,15 @@ public sealed class NuvyraDemoService : INuvyraDemoService
             && Enum.IsDefined(result);
     }
     private static PositionResponse ToResponse(Position position, MarketQuote quote) => new(position.Symbol, position.Quantity, position.AveragePrice, quote.Price, position.ReturnPercent(quote.Price));
-    private static InterventionResponse ToResponse(DecisionIntervention item) => new(item.Id, item.Symbol, item.CurrentLossPercent, item.UrgencyScore, item.Explanation, item.Alternatives.Select(value => value.ToString()).ToArray(), item.Choice?.ToString());
+    private static InterventionResponse ToResponse(DecisionIntervention item) => new(
+        item.Id,
+        item.Symbol,
+        item.CurrentLossPercent,
+        item.Explanation,
+        item.ObservedSignals,
+        item.Scenarios.Select(value => new DecisionScenarioResponse(value.Code, value.Label, value.CashReleased,
+            value.RemainingExposure, value.ProfitLossRecognized, value.Context)).ToArray(),
+        item.Alternatives.Select(value => value.ToString()).ToArray(),
+        item.Choice?.ToString(),
+        item.CreatedAt);
 }

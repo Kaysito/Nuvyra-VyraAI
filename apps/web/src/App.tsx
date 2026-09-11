@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AppShell, type Page } from "./components/AppShell";
 import { LearnView } from "./components/LearnView";
-import { INITIAL_PRACTICE_SESSION, PracticeView, type PracticeSession } from "./components/PracticeView";
+import { PracticeView } from "./components/PracticeView";
+import { INITIAL_PRACTICE_SESSION, type PracticeSession } from "./components/practiceSession";
 import { VyraPointsCard } from "./components/VyraPointsCard";
 import {
   awardPoints,
@@ -61,7 +62,7 @@ export function App() {
 
   const profileExperience = profile ? getExperienceLabel(profile.experience) : "En calibración";
 
-  return <AppShell page={page} onNavigate={navigate} profile={{ experience: profileExperience }}>
+  return <AppShell page={page} onNavigate={navigate} profile={{ experience: profileExperience }} vyraPoints={vyraPoints.points}>
     {page === "Inicio" && <HomeView
       pulseComplete={pulseComplete}
       profile={profile}
@@ -74,7 +75,7 @@ export function App() {
     {page === "Aprende" && <LearnView
       onPractice={() => navigate("Practica")}
       completedLessonIds={completedLessonIds}
-      onLessonComplete={completeLesson}
+      onComplete={completeLesson}
     />}
     {page === "Practica" && <PracticeView
       mode="practice"
@@ -83,9 +84,10 @@ export function App() {
       onSessionChange={setPracticeSession}
       onPositionCreated={() => award("practice:first-position", PRACTICE_POSITION_CREATED)}
       onDecisionCompleted={() => award("practice:first-decision", PRACTICE_DECISION_COMPLETED)}
+      totalVyraPoints={vyraPoints.points}
     />}
-    {page === "Mercado" && <PracticeView mode="market" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
-    {page === "Portafolio" && <PracticeView mode="portfolio" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} />}
+    {page === "Mercado" && <PracticeView mode="market" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} totalVyraPoints={vyraPoints.points} />}
+    {page === "Portafolio" && <PracticeView mode="portfolio" profile={profile} session={practiceSession} onSessionChange={setPracticeSession} totalVyraPoints={vyraPoints.points} />}
     {page === "Perfil" && <ProfileView profile={profile} onRetake={() => navigate("Pulso")} />}
   </AppShell>;
 }

@@ -7,21 +7,32 @@ import {
   getModuleDuration,
   getModuleStatus,
 } from "../learn/courseProgress";
+import { LESSON_COMPLETED } from "../demo/vyraPoints";
 
 const EMPTY_COMPLETED_LESSON_IDS = new Set<string>();
 
-export function LearnView({ onPractice, onLessonComplete, completedLessonIds = EMPTY_COMPLETED_LESSON_IDS }: {
+type CompletedLessonIds = ReadonlySet<string> | readonly string[];
+
+export function LearnView({
+  onPractice,
+  completedLessonIds = EMPTY_COMPLETED_LESSON_IDS,
+  onComplete,
+  onLessonComplete,
+}: {
   onPractice: () => void;
+  completedLessonIds?: CompletedLessonIds;
+  onComplete?: (lessonId: string) => void;
   onLessonComplete?: (lessonId: string) => void;
-  completedLessonIds?: ReadonlySet<string>;
 }) {
-  const [lesson, setLesson] = useState<Lesson | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [course, setCourse] = useState<CourseModule[]>([]);
   const [answer, setAnswer] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const completionReported = useRef(false);
+  const completedLessonSet = new Set(completedLessonIds);
+  const reportCompletion = onLessonComplete ?? onComplete;
 
   useEffect(() => {
     Promise.all([
@@ -31,19 +42,26 @@ export function LearnView({ onPractice, onLessonComplete, completedLessonIds = E
       .then(([loadedLessons, modules]) => {
         const availableLessons = loadedLessons ?? [];
         setLessons(availableLessons);
-        setLesson(availableLessons[0] ?? null);
+        setSelectedLessonId(availableLessons[0]?.id ?? null);
         setCourse(modules ?? []);
       })
       .catch(() => setError("No pudimos cargar el contenido de aprendizaje."))
       .finally(() => setIsLoading(false));
   }, []);
 
+  useEffect(() => {
+    completionReported.current = false;
+    setAnswer(null);
+  }, [selectedLessonId]);
+
   if (error) return <div className="page narrow-page"><p role="alert">{error}</p></div>;
   if (isLoading) return <div className="page narrow-page"><p role="status">Cargando microlección…</p></div>;
+
+  const lesson = lessons.find(item => item.id === selectedLessonId) ?? lessons[0] ?? null;
   if (!lesson) return <div className="page narrow-page"><p role="status">No hay microlecciones disponibles.</p></div>;
 
-  const completedModules = getCompletedModuleCount(course, completedLessonIds);
-  const courseProgress = getCourseProgress(course, completedLessonIds);
+  const completedModules = getCompletedModuleCount(course, completedLessonSet);
+  const courseProgress = getCourseProgress(course, completedLessonSet);
   const lessonDuration = getLessonDuration(lesson);
 
   return <div className="page learn-page">
@@ -74,10 +92,10 @@ export function LearnView({ onPractice, onLessonComplete, completedLessonIds = E
 
     <section className="journey-grid" aria-label="Módulos del curso">
       {course.map((module, index) => {
-        const status = getModuleStatus(module, lesson.id, completedLessonIds);
+        const status = getModuleStatus(module, lesson.id, completedLessonSet);
         const duration = getModuleDuration(module, lessons);
         const statusLabel = status === "completed" ? "Completado" : status === "current" ? "En curso" : "Pendiente";
-        return <article className={`journey-card glass-card module-card ${index === 0 ? "featured" : ""} module-${status}`} key={module.id}>
+        return <article className={`journey-card glass-card module-card ${status === "current" ? "featured" : ""} module-${status}`} key={module.id}>
           <div className="module-card-top">
             <span className="journey-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
             <span className="module-status">{statusLabel}</span>
@@ -89,13 +107,16 @@ export function LearnView({ onPractice, onLessonComplete, completedLessonIds = E
             <div><span>Acción práctica</span><strong>{module.sandboxAction}</strong></div>
           </div>
           <small className="module-criterion">Criterio: {module.completionCriterion}</small>
+          <button type="button" className="text-button" aria-pressed={module.lessonId === lesson.id} onClick={() => setSelectedLessonId(module.lessonId)}>
+            {completedLessonSet.has(module.lessonId) ? "Repasar módulo" : "Abrir módulo"} <span aria-hidden="true">→</span>
+          </button>
         </article>;
       })}
     </section>
 
     <section className="lesson-layout">
       <article className="glass-card lesson-story">
-        <span className="lesson-index" aria-hidden="true">01</span>
+        <span className="lesson-index" aria-hidden="true">{String(Math.max(0, course.findIndex(module => module.lessonId === lesson.id)) + 1).padStart(2, "0")}</span>
         <p className="micro-label">ESCENARIO</p>
         <h2>{lesson.scenario}</h2>
         <p>{lesson.explanation}</p>
@@ -125,12 +146,13 @@ export function LearnView({ onPractice, onLessonComplete, completedLessonIds = E
         <button type="button" className="button primary full" onClick={() => {
           if (!completionReported.current) {
             completionReported.current = true;
-            onLessonComplete?.(lesson.id);
+            reportCompletion?.(lesson.id);
           }
           onPractice();
         }} disabled={answer === null}>
           Practicar este concepto →
         </button>
+        {completedLessonSet.has(lesson.id) && <div className="points-earned" role="status"><span aria-hidden="true">✦</span><strong>+{LESSON_COMPLETED} VyraPoints</strong><small>Microlección completada</small></div>}
         <small className="guide-disclaimer">{lesson.keyLearning}</small>
       </aside>
     </section>

@@ -116,6 +116,22 @@ var checks = new (string Name, Action Run)[]
         var portfolio = service.GetPortfolio();
         Ensure(portfolio.Positions.Count == 1 && portfolio.Positions.Single().Quantity > 0, "Equivalent symbols should share one position.");
     }),
+    ("Before sell compares deterministic consequences without a psychological score", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        service.Buy(new("BTC", 1_000m));
+        service.SimulateCrash();
+        var intervention = service.BeforeSell(new("BTC"));
+        Ensure(intervention.Scenarios.Count == 3, "Before sell must compare three alternatives.");
+        Ensure(intervention.Scenarios.Single(item => item.Code == "sellAll").RemainingExposure == 0m,
+            "Selling all must leave no exposure.");
+        Ensure(intervention.Scenarios.Single(item => item.Code == "sellHalf").CashReleased == 360m,
+            "Selling half must release half of the crashed position value.");
+        Ensure(intervention.Scenarios.Single(item => item.Code == "hold").ProfitLossRecognized == 0m,
+            "Holding must not recognize a virtual result.");
+        Ensure(intervention.ObservedSignals.Contains("sharpDrop") && intervention.ObservedSignals.Contains("positionAtLoss"),
+            "The intervention must expose observable facts instead of an inferred emotion.");
+    }),
     ("Course is non-empty and contains modules", () =>
     {
         var service = new NuvyraDemoService(new DemoMarketDataProvider());
@@ -203,7 +219,89 @@ foreach (var check in checks)
     Console.WriteLine($"PASS: {check.Name}");
 }
 
+await CheckLiveMarketProvider();
+await CheckVyraInsightService();
+
 static void Ensure(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+static async Task CheckLiveMarketProvider()
+{
+    const string payload = """
+        {
+          "bitcoin": { "usd": 70000, "usd_24h_change": 2.5, "last_updated_at": 1711356300 },
+          "ethereum": { "usd": 3500, "usd_24h_change": -1.25, "last_updated_at": 1711356300 },
+          "solana": { "usd": 180, "usd_24h_change": 4.75, "last_updated_at": 1711356300 }
+        }
+        """;
+
+    var successHandler = new StubHttpMessageHandler(_ => new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+    {
+        Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json")
+    });
+    var successProvider = new CoinGeckoMarketDataProvider(
+        new HttpClient(successHandler) { BaseAddress = new Uri("https://api.coingecko.com/api/v3/") },
+        cacheDuration: TimeSpan.FromMinutes(1));
+
+    var first = await successProvider.GetQuotesAsync();
+    var second = await successProvider.GetQuotesAsync();
+    Ensure(first.Count == 3, "Live provider must map the three supported assets.");
+    Ensure(first.Single(quote => quote.Symbol == "BTC").Price == 70_000m, "CoinGecko price was not mapped.");
+    Ensure(first.All(quote => quote.Source == "coingecko"), "Live quotes must identify their source.");
+    Ensure(successHandler.CallCount == 1 && ReferenceEquals(first, second), "Fresh quotes must be served from cache.");
+    Console.WriteLine("PASS: Live market maps CoinGecko and uses the short cache");
+
+    var failureHandler = new StubHttpMessageHandler(_ => new HttpResponseMessage(System.Net.HttpStatusCode.TooManyRequests));
+    var fallbackProvider = new CoinGeckoMarketDataProvider(
+        new HttpClient(failureHandler) { BaseAddress = new Uri("https://api.coingecko.com/api/v3/") });
+    var fallback = await fallbackProvider.GetQuotesAsync();
+    Ensure(fallback.Count == 3 && fallback.All(quote => quote.Source == "demo-fallback"),
+        "External failures must return clearly identified local data.");
+    Console.WriteLine("PASS: Live market falls back safely when CoinGecko is unavailable");
+}
+
+static async Task CheckVyraInsightService()
+{
+    var sandbox = new DemoMarketDataProvider();
+    var live = new StaticLiveMarketProvider([
+        new("BTC", "Bitcoin", 70_000m, -2m, 72, DateTimeOffset.UtcNow, "coingecko")
+    ]);
+    var service = new VyraInsightService(live, sandbox, new ContextualInsightEngine());
+    var profile = new InsightProfileContext("beginner", "medium", "long", "growth", "pauseAndReview", "pulse-v1");
+
+    var insight = await service.GenerateAsync(new(
+        "BTC", "sell", "sandbox", "crash", profile, 45m));
+    Ensure(insight.IsEducational && insight.Source == "vyra-rules-v0.1", "VyraAI must identify its educational rule source.");
+    Ensure(insight.MarketSource == "sandbox-simulation", "Crash insights must identify simulated market data.");
+    Ensure(insight.BehavioralSignals.Contains("rapidDecisionAfterDrop"), "Selling after a crash must expose the observable timing signal.");
+    Ensure(insight.BehavioralSignals.Contains("planMismatch"), "A long growth profile must be contrasted with a rapid sale.");
+    Ensure(insight.BehavioralSignals.Contains("highPortfolioConcentration"), "High virtual exposure must be visible.");
+    Ensure(insight.Factors.All(factor => !factor.Message.Contains("debes", StringComparison.OrdinalIgnoreCase)),
+        "VyraAI must not prescribe a user decision.");
+    Console.WriteLine("PASS: VyraAI explains a sandbox crash without prescribing a decision");
+
+    var marketInsight = await service.GenerateAsync(new(
+        "BTC", "explore", "market", "baseline", null, 0m));
+    Ensure(marketInsight.MarketSource == "coingecko", "Market insights must use the live provider source.");
+    Ensure(marketInsight.Factors.Any(factor => factor.Code == "uncalibrated_profile"), "Missing profiles must be disclosed.");
+    Console.WriteLine("PASS: VyraAI supports live market context without a profile");
+}
+
+sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler
+{
+    public int CallCount { get; private set; }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        CallCount++;
+        return Task.FromResult(responseFactory(request));
+    }
+}
+
+sealed class StaticLiveMarketProvider(IReadOnlyCollection<MarketQuote> quotes) : ILiveMarketDataProvider
+{
+    public Task<IReadOnlyCollection<MarketQuote>> GetQuotesAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(quotes);
 }

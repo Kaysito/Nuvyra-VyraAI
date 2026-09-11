@@ -4,12 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PulseProfile } from "../pulse/pulseModel";
 import {
-  INITIAL_PRACTICE_SESSION,
   PracticeView,
+} from "./PracticeView";
+import {
+  INITIAL_PRACTICE_SESSION,
   addJourneyEvent,
   localDecisionScenarios,
   type PracticeSession,
-} from "./PracticeView";
+} from "./practiceSession";
 
 const profile: PulseProfile = {
   experience: "intermediate",

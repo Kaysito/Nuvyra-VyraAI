@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AppShell, type Page } from "./components/AppShell";
 import { LearnView } from "./components/LearnView";
-import { INITIAL_PRACTICE_SESSION, PracticeView, type PracticeSession } from "./components/PracticeView";
+import { PracticeView } from "./components/PracticeView";
+import { INITIAL_PRACTICE_SESSION, type PracticeSession } from "./components/practiceSession";
 import { PulseV1View } from "./pulse/PulseV1View";
 import type { PulseProfile } from "./pulse/pulseModel";
 import {

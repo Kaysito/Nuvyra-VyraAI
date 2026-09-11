@@ -6,14 +6,23 @@ import {
   getObjectiveLabel,
   getRiskDispositionLabel,
 } from "../pulse/pulsePresentation";
+import { apiClient, type QuoteResponse } from "../services/apiClient";
 
-const assets = [
+type PracticeAsset = {
+  symbol: PracticeAssetSymbol;
+  name: string;
+  price: number;
+  change: number;
+  risk: string;
+};
+
+const assets: readonly PracticeAsset[] = [
   { symbol: "BTC", name: "Bitcoin", price: 112450, change: 2.4, risk: "Elevado" },
   { symbol: "ETH", name: "Ethereum", price: 4380, change: -1.8, risk: "Elevado" },
   { symbol: "SOL", name: "Solana", price: 214, change: 5.2, risk: "Muy elevado" },
 ] as const;
 
-export type PracticeAssetSymbol = (typeof assets)[number]["symbol"];
+export type PracticeAssetSymbol = "BTC" | "ETH" | "SOL";
 export type PracticeDecision = "wait24Hours" | "reviewEvidence" | "continueSale";
 
 const decisionMessages: Record<PracticeDecision, string> = {
@@ -46,6 +55,9 @@ export function PracticeView({
   onSessionChange: (session: PracticeSession) => void;
 }) {
   const [intervention, setIntervention] = useState(false);
+  const [marketAssets, setMarketAssets] = useState<readonly PracticeAsset[]>(assets);
+  const [marketState, setMarketState] = useState<"loading" | "live" | "cache" | "fallback">("loading");
+  const [marketAsOf, setMarketAsOf] = useState<string | null>(null);
   const interventionTrigger = useRef<HTMLButtonElement>(null);
   const bought = session.boughtSymbol !== null;
   const scenarioActive = session.crash && mode !== "market";
@@ -55,6 +67,38 @@ export function PracticeView({
   const riskDisposition = profile ? getRiskDispositionLabel(profile.riskDisposition) : "Sin calibrar";
   const horizon = profile ? getHorizonLabel(profile.horizon) : "Sin definir";
   const objective = profile ? getObjectiveLabel(profile.objective) : "Sin definir";
+  const displayAssets = mode === "market" ? marketAssets : assets;
+
+  useEffect(() => {
+    if (mode !== "market") return;
+
+    let active = true;
+    setMarketState("loading");
+    const refreshMarket = () => {
+      apiClient.getQuotes()
+        .then(quotes => {
+          if (!active) return;
+          const mapped = mapMarketQuotes(quotes);
+          if (mapped.length === assets.length) setMarketAssets(mapped);
+          const sources = new Set(quotes.map(quote => quote.source));
+          setMarketState(sources.has("coingecko") ? "live" : sources.has("coingecko-cache") ? "cache" : "fallback");
+          setMarketAsOf(quotes[0]?.asOf ?? null);
+        })
+        .catch(() => {
+          if (!active) return;
+          setMarketAssets(assets);
+          setMarketState("fallback");
+          setMarketAsOf(null);
+        });
+    };
+
+    refreshMarket();
+    const refreshTimer = window.setInterval(refreshMarket, 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
+  }, [mode]);
 
   const updateSession = (patch: Partial<PracticeSession>) => {
     onSessionChange({ ...session, ...patch });
@@ -65,9 +109,9 @@ export function PracticeView({
       <div>
         <p className="overline">{mode === "market" ? "ANÁLISIS INFORMATIVO" : "LABORATORIO DE DECISIONES"}</p>
         <h1>{mode === "portfolio" ? "Tu portafolio virtual" : mode === "market" ? "Mercado con contexto" : "Practica antes de arriesgar."}</h1>
-        <p>{mode === "market" ? "Datos simulados de referencia para comprender, no cotizaciones en tiempo real." : "Un escenario controlado donde cada error se convierte en aprendizaje."}</p>
+        <p>{mode === "market" ? marketDescription(marketState, marketAsOf) : "Un escenario controlado donde cada error se convierte en aprendizaje."}</p>
       </div>
-      <div className="mode-badge"><span>●</span>{mode === "market" ? "MERCADO · REFERENCIA" : "SIMULACIÓN · ACTIVA"}</div>
+      <div className="mode-badge"><span>●</span>{mode === "market" ? marketBadge(marketState) : "SIMULACIÓN · ACTIVA"}</div>
     </header>
 
     <section className="stats-grid" aria-label="Estado del laboratorio">
@@ -102,7 +146,7 @@ export function PracticeView({
         </div>
         <div className="asset-table">
           <div className="asset-head" aria-hidden="true"><span>Activo</span><span>Precio</span><span>24 h</span><span>Riesgo</span><span/></div>
-          {assets.map((asset, index) => <div className="asset-row" key={asset.symbol}>
+          {displayAssets.map((asset, index) => <div className="asset-row" key={asset.symbol}>
             <div>
               <span className={`coin coin-${index}`} aria-hidden="true">{asset.symbol[0]}</span>
               <span><b>{asset.name}</b><small>{asset.symbol}</small></span>
@@ -166,6 +210,36 @@ export function PracticeView({
       }}
     />}
   </div>;
+}
+
+function mapMarketQuotes(quotes: QuoteResponse[]): PracticeAsset[] {
+  const supportedSymbols: PracticeAssetSymbol[] = ["BTC", "ETH", "SOL"];
+  return supportedSymbols.flatMap(symbol => {
+    const quote = quotes.find(candidate => candidate.symbol.toUpperCase() === symbol);
+    return quote ? [{
+      symbol,
+      name: quote.name,
+      price: quote.price,
+      change: quote.change24Hours,
+      risk: quote.volatilityScore >= 85 ? "Muy elevado" : quote.volatilityScore >= 65 ? "Elevado" : "Moderado",
+    }] : [];
+  });
+}
+
+function marketBadge(state: "loading" | "live" | "cache" | "fallback") {
+  if (state === "live") return "MERCADO · EN VIVO";
+  if (state === "cache") return "MERCADO · CACHÉ";
+  if (state === "fallback") return "MERCADO · DEMO";
+  return "MERCADO · ACTUALIZANDO";
+}
+
+function marketDescription(state: "loading" | "live" | "cache" | "fallback", asOf: string | null) {
+  if (state === "loading") return "Actualizando cotizaciones de referencia…";
+  if (state === "fallback") return "El proveedor externo no está disponible. Mostramos datos demo claramente identificados.";
+  const time = asOf ? new Date(asOf).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "ahora";
+  return state === "cache"
+    ? `Última cotización disponible de CoinGecko (${time}). Solo información educativa.`
+    : `Cotizaciones de CoinGecko actualizadas a las ${time}. Solo información educativa.`;
 }
 
 function Stat({

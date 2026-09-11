@@ -48,4 +48,19 @@ public sealed record BeforeSellRequest(string Symbol);
 public sealed record InterventionResponse(Guid Id, string Symbol, decimal CurrentLossPercent, int UrgencyScore, string Explanation, IReadOnlyCollection<string> Alternatives, string? Choice);
 public sealed record DecisionRequest(string Choice);
 public sealed record BehavioralSignalResponse(string Type, string Symbol, string Explanation, DateTimeOffset ObservedAt);
+public sealed record InsightProfileContext(string Experience, string RiskDisposition, string Horizon, string Objective, string PressureResponse, string AssessmentVersion);
+public sealed record VyraInsightRequest(string Symbol, string IntendedAction, string Environment, string Scenario, InsightProfileContext? Profile, decimal VirtualExposurePercent = 0);
+public sealed record InsightFactorResponse(string Code, string Message);
+public sealed record VyraInsightResponse(
+    Guid Id,
+    string Title,
+    string Observation,
+    IReadOnlyCollection<InsightFactorResponse> Factors,
+    IReadOnlyCollection<string> ReflectionQuestions,
+    IReadOnlyCollection<string> BehavioralSignals,
+    string Source,
+    string MarketSource,
+    bool IsEducational,
+    DateTimeOffset GeneratedAt,
+    string Disclaimer);
 public sealed record ApiErrorResponse(string Code, string Message, string TraceId, IReadOnlyDictionary<string, string[]>? Errors = null);

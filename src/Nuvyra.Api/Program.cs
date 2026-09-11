@@ -37,6 +37,8 @@ app.MapGet("/api/market/quotes", async (ILiveMarketDataProvider provider, Cancel
         quote.AsOf ?? DateTimeOffset.UtcNow,
         quote.Source));
 });
+app.MapPost("/api/guide/insights", async (VyraInsightRequest request, IVyraInsightService service, CancellationToken cancellationToken) =>
+    Results.Ok(await service.GenerateAsync(request, cancellationToken)));
 app.MapGet("/api/learning/lessons/{id}", (string id, INuvyraDemoService service) => service.GetLesson(id));
 app.MapGet("/api/learn/lessons", (INuvyraDemoService service) => service.GetLessons());
 app.MapGet("/api/learn/course", (INuvyraDemoService service) => service.GetCourse());

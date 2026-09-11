@@ -66,4 +66,16 @@ describe("AppShell", () => {
     render(<AppShell page="Inicio" onNavigate={vi.fn()} profile={{ experience: "Inicial" }}>Contenido</AppShell>);
     expect(screen.getByRole("link", { name: /saltar al contenido/i })).toHaveAttribute("href", "#main-content");
   });
+
+  it("renders light and dark brand marks for an animated theme transition", () => {
+    const { container } = render(<AppShell page="Inicio" onNavigate={vi.fn()} profile={{ experience: "Inicial" }}>Contenido</AppShell>);
+    const marks = container.querySelectorAll(".brand-mark");
+
+    expect(marks).toHaveLength(2);
+    marks.forEach(mark => {
+      expect(mark.querySelector(".brand-mark-light")).toHaveAttribute("src", "/brand/nuvyra-mark-light.svg");
+      expect(mark.querySelector(".brand-mark-dark")).toHaveAttribute("src", "/brand/nuvyra-mark-dark.svg");
+      expect(mark).toHaveAttribute("aria-hidden", "true");
+    });
+  });
 });

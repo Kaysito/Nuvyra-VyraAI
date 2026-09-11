@@ -8,6 +8,13 @@ const navigation: { label: Page; icon: string }[] = [
   { label: "Portafolio", icon: "▱" }, { label: "Perfil", icon: "○" },
 ];
 
+function ThemeAwareLogo() {
+  return <span className="brand-mark" aria-hidden="true">
+    <img className="brand-mark-light" src="/brand/nuvyra-mark-light.svg" alt="" />
+    <img className="brand-mark-dark" src="/brand/nuvyra-mark-dark.svg" alt="" />
+  </span>;
+}
+
 export function AppShell({ page, onNavigate, profile, vyraPoints = 0, children }: {
   page: Page; onNavigate: (page: Page) => void;
   profile: { experience: string }; vyraPoints?: number; children: ReactNode;
@@ -41,7 +48,7 @@ export function AppShell({ page, onNavigate, profile, vyraPoints = 0, children }
         </svg>
       </button>
       <button className="brand-button" onClick={() => onNavigate("Inicio")} aria-label="Nuvyra, inicio">
-        <img src="/brand/nuvyra-mark.svg" alt="" />
+        <ThemeAwareLogo />
         <span><b>NUVYRA</b><small>BETA · 0.1</small></span>
       </button>
       <nav id="desktop-navigation" aria-label="Navegación principal">
@@ -63,7 +70,7 @@ export function AppShell({ page, onNavigate, profile, vyraPoints = 0, children }
     <div className="app-content">
       <header className="mobile-header glass-sidebar">
         <button className="brand-button" onClick={() => onNavigate("Inicio")} aria-label="Nuvyra, inicio">
-          <img src="/brand/nuvyra-mark.svg" alt="" /><b>NUVYRA</b>
+          <ThemeAwareLogo /><b>NUVYRA</b>
         </button>
         <button className="profile-shortcut" onClick={() => onNavigate("Perfil")}>Perfil</button>
       </header>

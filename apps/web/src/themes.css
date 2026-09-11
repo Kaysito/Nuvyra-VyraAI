@@ -169,6 +169,27 @@ button { min-height: 44px; }
   background: var(--glass); box-shadow: var(--shadow); font-weight: 700; line-height: 1.5;
 }
 .narrow-page > p[role="alert"] { border-color: var(--danger); }
+.brand-mark {
+  position: relative; display: inline-block; flex: 0 0 37px; width: 37px; height: 37px;
+  border-radius: 10px; overflow: hidden; perspective: 240px; transform-style: preserve-3d;
+  background: #f6f9fa; border: 1px solid rgba(18, 49, 73, .08);
+  box-shadow: 0 7px 18px rgba(15, 55, 79, .08);
+  transition: background-color 360ms ease, border-color 360ms ease, box-shadow 360ms ease, transform 480ms cubic-bezier(.2,.8,.2,1);
+}
+.brand-button .brand-mark img {
+  position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px);
+  padding: 0; border-radius: 0; background: transparent; backface-visibility: hidden;
+  transition: opacity 280ms ease, transform 480ms cubic-bezier(.2,.8,.2,1), filter 360ms ease;
+}
+.brand-mark-light { opacity: 1; transform: rotateY(0deg) scale(1); }
+.brand-mark-dark { opacity: 0; transform: rotateY(-72deg) scale(.78); }
+:root[data-theme="dark"] .brand-mark {
+  background: #102337; border-color: rgba(128, 201, 255, .24);
+  box-shadow: 0 9px 24px rgba(0, 0, 0, .28), 0 0 20px rgba(70, 174, 242, .12);
+  transform: rotateZ(-2deg);
+}
+:root[data-theme="dark"] .brand-mark-light { opacity: 0; transform: rotateY(72deg) scale(.78); }
+:root[data-theme="dark"] .brand-mark-dark { opacity: 1; transform: rotateY(0deg) scale(1); filter: drop-shadow(0 0 5px rgba(98, 204, 255, .2)); }
 
 /* Small feedback movements, never perpetual movement around financial values. */
 .button, .row-action, .answer-grid button, .sidebar nav button, .journey-card {
@@ -192,6 +213,7 @@ button { min-height: 44px; }
   .asset-row .risk-label { text-align: right; }
 }
 @media (max-width: 760px) {
+  .mobile-header .brand-mark { width: 31px; height: 31px; flex-basis: 31px; }
   .bottom-nav { bottom: max(10px, env(safe-area-inset-bottom)); }
   .bottom-nav small { font-size: .65rem; }
   .page { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
@@ -217,6 +239,7 @@ button { min-height: 44px; }
   .glass-card, .glass-sidebar, .button, .row-action { border: 1px solid CanvasText; }
   button[aria-current="page"] { outline: 2px solid Highlight; }
   .meter span, .progress-track span { background: Highlight; }
+  .brand-mark { border: 1px solid CanvasText; background: Canvas; box-shadow: none; }
 }
 
 .vyra-points-card {

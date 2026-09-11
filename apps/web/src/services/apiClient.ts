@@ -23,6 +23,29 @@ export type QuoteResponse = {
   source: string;
 };
 
+export type VyraInsightResponse = {
+  id: string;
+  title: string;
+  observation: string;
+  factors: { code: string; message: string }[];
+  reflectionQuestions: string[];
+  behavioralSignals: string[];
+  source: string;
+  marketSource: string;
+  isEducational: boolean;
+  generatedAt: string;
+  disclaimer: string;
+};
+
+export type VyraInsightRequest = {
+  symbol: string;
+  intendedAction: "explore" | "buy" | "hold" | "sell";
+  environment: "market" | "sandbox";
+  scenario: "baseline" | "crash";
+  profile: ProfileAssessmentRequest & { assessmentVersion: "pulse-v1" } | null;
+  virtualExposurePercent: number;
+};
+
 export type Lesson = {
   id: string;
   title: string;
@@ -92,6 +115,11 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): P
 export const apiClient = {
   getHealth: () => request<{ status: string; product: string; heritage: string }>("/api/health"),
   getQuotes: () => request<QuoteResponse[]>("/api/market/quotes"),
+  getInsight: (context: VyraInsightRequest) => request<VyraInsightResponse>("/api/guide/insights", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(context),
+  }),
   getLessons: () => request<Lesson[]>("/api/learn/lessons"),
   getCourse: () => request<CourseModule[]>("/api/learn/course"),
   getPortfolio: () => request<unknown>("/api/sandbox/portfolio"),

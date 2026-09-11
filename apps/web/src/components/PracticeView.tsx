@@ -6,7 +6,7 @@ import {
   getObjectiveLabel,
   getRiskDispositionLabel,
 } from "../pulse/pulsePresentation";
-import { apiClient, type QuoteResponse } from "../services/apiClient";
+import { apiClient, type QuoteResponse, type VyraInsightResponse } from "../services/apiClient";
 
 type PracticeAsset = {
   symbol: PracticeAssetSymbol;
@@ -58,6 +58,9 @@ export function PracticeView({
   const [marketAssets, setMarketAssets] = useState<readonly PracticeAsset[]>(assets);
   const [marketState, setMarketState] = useState<"loading" | "live" | "cache" | "fallback">("loading");
   const [marketAsOf, setMarketAsOf] = useState<string | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<PracticeAssetSymbol>("BTC");
+  const [insight, setInsight] = useState<VyraInsightResponse | null>(null);
+  const [insightState, setInsightState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const interventionTrigger = useRef<HTMLButtonElement>(null);
   const bought = session.boughtSymbol !== null;
   const scenarioActive = session.crash && mode !== "market";
@@ -102,6 +105,30 @@ export function PracticeView({
 
   const updateSession = (patch: Partial<PracticeSession>) => {
     onSessionChange({ ...session, ...patch });
+  };
+
+  const generateInsight = (
+    symbol: PracticeAssetSymbol,
+    intendedAction: "explore" | "sell",
+    environment: "market" | "sandbox",
+    scenario: "baseline" | "crash",
+  ) => {
+    setSelectedSymbol(symbol);
+    setInsightState("loading");
+    apiClient.getInsight({
+      symbol,
+      intendedAction,
+      environment,
+      scenario,
+      profile: profile ? { ...profile } : null,
+      virtualExposurePercent: session.boughtSymbol === symbol ? 10 : 0,
+    }).then(result => {
+      setInsight(result);
+      setInsightState("ready");
+    }).catch(() => {
+      setInsight(null);
+      setInsightState("error");
+    });
   };
 
   return <div className="page practice-page">
@@ -151,13 +178,18 @@ export function PracticeView({
               <span className={`coin coin-${index}`} aria-hidden="true">{asset.symbol[0]}</span>
               <span><b>{asset.name}</b><small>{asset.symbol}</small></span>
             </div>
-            <strong>${(scenarioActive ? asset.price * .72 : asset.price).toLocaleString()}</strong>
+            <strong>{formatMarketPrice(scenarioActive ? asset.price * .72 : asset.price)}</strong>
             <span className={(scenarioActive || asset.change < 0) ? "negative" : "positive"}>
-              {scenarioActive ? "−28.0%" : `${asset.change > 0 ? "+" : ""}${asset.change}%`}
+              {scenarioActive ? "−28.0%" : formatMarketChange(asset.change)}
             </span>
             <span className="risk-label">{asset.risk}</span>
             {mode === "market"
-              ? <span className="row-state">Solo referencia</span>
+              ? <button
+                type="button"
+                className="row-action"
+                aria-label={`Analizar ${asset.name} con VyraAI`}
+                onClick={() => generateInsight(asset.symbol, "explore", "market", "baseline")}
+              >Analizar</button>
               : <button
                 type="button"
                 className="row-action"
@@ -176,20 +208,29 @@ export function PracticeView({
           <span className="guide-symbol" aria-hidden="true">✦</span>
           <div><p className="micro-label">NUVYRA GUIDE</p><small>Explicación contextual</small></div>
         </div>
-        <h2>{scenarioActive ? "El mercado cambió. Tu plan quizá no." : bought ? "Tu primera posición ya está activa." : "Primero una decisión pequeña."}</h2>
-        <p>{scenarioActive
+        <h2>{mode === "market" && insight ? insight.title : scenarioActive ? "El mercado cambió. Tu plan quizá no." : bought ? "Tu primera posición ya está activa." : "Primero una decisión pequeña."}</h2>
+        <p>{mode === "market" && insight ? insight.observation : mode === "market" && insightState === "error" ? "VyraAI no pudo completar el análisis. El mercado sigue disponible y puedes intentarlo de nuevo." : scenarioActive
           ? `La pérdida existe dentro del escenario. Antes de decidir, contrasta el movimiento con tu horizonte (${horizon}) y tu objetivo (${objective}).`
           : bought
             ? "Ahora puedes experimentar una caída controlada y observar tu reacción."
             : "Empieza con $1,000 virtuales. Podrás observar cómo cambia el escenario sin comprometer dinero real."}</p>
+        {mode === "market" && insight && <InsightSummary insight={insight} />}
         <div className="guide-signal"><span>Tu horizonte</span><strong>{horizon}</strong></div>
-        <button
+        {mode === "market" ? <button
+          type="button"
+          className="button primary full"
+          disabled={insightState === "loading"}
+          onClick={() => generateInsight(selectedSymbol, "explore", "market", "baseline")}
+        >{insightState === "loading" ? "Analizando contexto…" : `Analizar ${selectedSymbol} con VyraAI →`}</button> : <button
           ref={interventionTrigger}
           type="button"
           className="button primary full"
           disabled={!scenarioActive}
-          onClick={() => setIntervention(true)}
-        >Antes de vender →</button>
+          onClick={() => {
+            generateInsight(session.boughtSymbol ?? "BTC", "sell", "sandbox", "crash");
+            setIntervention(true);
+          }}
+        >Antes de vender →</button>}
         <small className="guide-disclaimer">Nuvyra explica y contextualiza. Tú decides.</small>
       </aside>
     </section>
@@ -202,6 +243,8 @@ export function PracticeView({
 
     {intervention && <Intervention
       horizon={horizon}
+      insight={insight}
+      insightState={insightState}
       returnFocusRef={interventionTrigger}
       onClose={() => setIntervention(false)}
       onChoose={value => {
@@ -209,6 +252,15 @@ export function PracticeView({
         setIntervention(false);
       }}
     />}
+  </div>;
+}
+
+function InsightSummary({ insight }: { insight: VyraInsightResponse }) {
+  return <div className="vyra-insight" aria-live="polite">
+    <p className="micro-label">FACTORES OBSERVADOS</p>
+    <ul>{insight.factors.slice(0, 3).map(factor => <li key={factor.code}>{factor.message}</li>)}</ul>
+    {insight.reflectionQuestions[0] && <p><strong>Para reflexionar:</strong> {insight.reflectionQuestions[0]}</p>}
+    <small>{insight.disclaimer}</small>
   </div>;
 }
 
@@ -224,6 +276,14 @@ function mapMarketQuotes(quotes: QuoteResponse[]): PracticeAsset[] {
       risk: quote.volatilityScore >= 85 ? "Muy elevado" : quote.volatilityScore >= 65 ? "Elevado" : "Moderado",
     }] : [];
   });
+}
+
+function formatMarketPrice(price: number) {
+  return price.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatMarketChange(change: number) {
+  return `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
 }
 
 function marketBadge(state: "loading" | "live" | "cache" | "fallback") {
@@ -262,11 +322,15 @@ function Stat({
 
 function Intervention({
   horizon,
+  insight,
+  insightState,
   returnFocusRef,
   onClose,
   onChoose,
 }: {
   horizon: string;
+  insight: VyraInsightResponse | null;
+  insightState: "idle" | "loading" | "ready" | "error";
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   onChoose: (value: PracticeDecision) => void;
@@ -299,6 +363,9 @@ function Intervention({
         <div><span>Volatilidad</span><strong>Alta</strong></div>
         <div><span>Horizonte</span><strong>{horizon}</strong></div>
       </div>
+      {insightState === "loading" && <p className="insight-loading" role="status">VyraAI está contrastando el escenario con tu pulso…</p>}
+      {insightState === "error" && <p className="insight-loading" role="status">No pudimos generar contexto adicional. Tú conservas el control de la decisión.</p>}
+      {insightState === "ready" && insight && <InsightSummary insight={insight} />}
       <div className="decision-actions">
         <button type="button" className="button secondary" onClick={() => onChoose("wait24Hours")}>Esperar 24 horas</button>
         <button type="button" className="button secondary" onClick={() => onChoose("reviewEvidence")}>Revisar contexto</button>

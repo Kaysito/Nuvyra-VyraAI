@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PulseProfile } from "../pulse/pulseModel";
 import {
   INITIAL_PRACTICE_SESSION,
@@ -43,15 +43,32 @@ async function openIntervention() {
 }
 
 beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+  vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({
     ok: true,
-    json: () => Promise.resolve([
+    json: () => Promise.resolve(url === "/api/guide/insights" ? {
+      id: "insight-1",
+      title: "Revisa el contexto antes de decidir",
+      observation: "VyraAI observó el movimiento del activo.",
+      factors: [
+        { code: "sharp_drop", message: "El activo registra una caída en el escenario observado." },
+        { code: "profile_context", message: "Tu horizonte y objetivo se mantienen separados." },
+      ],
+      reflectionQuestions: ["¿Cambió tu objetivo o solamente cambió el precio?"],
+      behavioralSignals: ["rapidDecisionAfterDrop"],
+      source: "vyra-rules-v0.1",
+      marketSource: "sandbox-simulation",
+      isEducational: true,
+      generatedAt: "2026-09-11T12:00:00Z",
+      disclaimer: "Contenido educativo. VyraAI contextualiza información; no decide por ti.",
+    } : [
       { symbol: "BTC", name: "Bitcoin", price: 70000, change24Hours: 3.1, volatilityScore: 72, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
       { symbol: "ETH", name: "Ethereum", price: 3500, change24Hours: -1.2, volatilityScore: 79, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
       { symbol: "SOL", name: "Solana", price: 180, change24Hours: 4.8, volatilityScore: 88, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
     ]),
-  }));
+  })));
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("PracticeView", () => {
   it("renders a safe uncalibrated state without legacy profile scoring", () => {
@@ -71,6 +88,7 @@ describe("PracticeView", () => {
     expect(screen.getAllByText("Largo plazo").length).toBeGreaterThan(0);
     expect(screen.getByText("Alta")).toBeInTheDocument();
     expect(screen.getByText("Nuvyra explica y contextualiza. Tú decides.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/¿cambió tu objetivo/i)).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: /revisar contexto/i }));
     expect(screen.getByRole("status")).toHaveTextContent("Elegiste revisar contexto");
@@ -121,12 +139,32 @@ describe("PracticeView", () => {
     expect(screen.getByText(/cotizaciones de coingecko/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /simular caída/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /practicar con bitcoin/i })).not.toBeInTheDocument();
-    expect(screen.getAllByText("Solo referencia")).toHaveLength(3);
+    expect(screen.getAllByRole("button", { name: /analizar .* con vyraai/i })).toHaveLength(4);
     expect(screen.queryByText("−28.0%")).not.toBeInTheDocument();
-    expect(screen.getByText("+3.1%")).toBeInTheDocument();
-    expect(screen.getByText("-1.2%")).toBeInTheDocument();
-    expect(screen.getByText("+4.8%")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /antes de vender/i })).toBeDisabled();
+    expect(screen.getByText("+3.10%")).toBeInTheDocument();
+    expect(screen.getByText("-1.20%")).toBeInTheDocument();
+    expect(screen.getByText("+4.80%")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /analizar btc con vyraai/i })).toBeEnabled();
+  });
+
+  it("sends the selected market asset and provisional pulse to VyraAI", async () => {
+    const fetchMock = vi.mocked(fetch);
+    const user = userEvent.setup();
+    render(<PracticeHarness mode="market" />);
+    await waitFor(() => expect(screen.getByText("MERCADO · EN VIVO")).toBeInTheDocument());
+
+    await user.click(screen.getByRole("button", { name: /analizar solana con vyraai/i }));
+    await waitFor(() => expect(screen.getByText(/revisa el contexto antes de decidir/i)).toBeInTheDocument());
+
+    const insightCall = fetchMock.mock.calls.find(([url]) => url === "/api/guide/insights");
+    expect(insightCall).toBeDefined();
+    expect(JSON.parse(String(insightCall?.[1]?.body))).toMatchObject({
+      symbol: "SOL",
+      intendedAction: "explore",
+      environment: "market",
+      scenario: "baseline",
+      profile: { assessmentVersion: "pulse-v1", horizon: "long", objective: "growth" },
+    });
   });
 
   it("identifies local fallback data when the market API is unavailable", async () => {
@@ -135,7 +173,7 @@ describe("PracticeView", () => {
 
     await waitFor(() => expect(screen.getByText("MERCADO · DEMO")).toBeInTheDocument());
     expect(screen.getByText(/proveedor externo no está disponible/i)).toBeInTheDocument();
-    expect(screen.getByText("+2.4%")).toBeInTheDocument();
+    expect(screen.getByText("+2.40%")).toBeInTheDocument();
   });
 
   it("renders a previously created virtual position in portfolio mode", () => {

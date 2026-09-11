@@ -165,6 +165,20 @@ describe("App", () => {
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   }, 15000);
 
+  it("keeps the completed lesson when returning from practice", async () => {
+    render(<App />);
+    const user = await completePulse();
+
+    await user.click(screen.getAllByRole("button", { name: /nuvyra, inicio/i })[0]);
+    await user.click(screen.getByRole("button", { name: /ver lección/i }));
+    await user.click(await screen.findByRole("button", { name: learningLesson.options[1] }));
+    await user.click(screen.getByRole("button", { name: /practicar este concepto/i }));
+    await user.click(desktopNavigation().getByRole("button", { name: "Aprende" }));
+
+    expect(await screen.findByText("100%")).toBeInTheDocument();
+    expect(screen.getByText("Completado")).toBeInTheDocument();
+  });
+
   it("uses the completed pulse as context in the practice sandbox without a clarity score", async () => {
     render(<App />);
     const user = await completePulse();

@@ -26,6 +26,7 @@ export function App() {
   const [page, setPage] = useState<Page>("Inicio");
   const [profile, setProfile] = useState<PulseProfile | null>(null);
   const [practiceSession, setPracticeSession] = useState<PracticeSession>(() => ({ ...INITIAL_PRACTICE_SESSION }));
+  const [completedLessonIds, setCompletedLessonIds] = useState<ReadonlySet<string>>(() => new Set());
   const [vyraPoints, setVyraPoints] = useState<VyraPointsState>(() => ({
     points: INITIAL_VYRA_POINTS_STATE.points,
     awardedActions: new Set(INITIAL_VYRA_POINTS_STATE.awardedActions),
@@ -34,6 +35,16 @@ export function App() {
 
   const award = (actionId: string, amount: number) => {
     setVyraPoints(state => awardPoints(state, actionId, amount));
+  };
+
+  const completeLesson = (lessonId: string) => {
+    setCompletedLessonIds(current => {
+      if (current.has(lessonId)) return current;
+      const next = new Set(current);
+      next.add(lessonId);
+      return next;
+    });
+    award(`lesson:${lessonId}:completed`, LESSON_COMPLETED);
   };
 
   const navigate = (nextPage: Page) => {
@@ -62,7 +73,8 @@ export function App() {
     {page === "Pulso" && <PulseV1View onComplete={finishPulse} />}
     {page === "Aprende" && <LearnView
       onPractice={() => navigate("Practica")}
-      onLessonComplete={lessonId => award(`lesson:${lessonId}:completed`, LESSON_COMPLETED)}
+      completedLessonIds={completedLessonIds}
+      onLessonComplete={completeLesson}
     />}
     {page === "Practica" && <PracticeView
       mode="practice"

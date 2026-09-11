@@ -1,8 +1,14 @@
 # Pulso de Nuvyra, curso y finanzas conductuales
 
-## Alcance
+## Vigencia
 
-Esta especificación corresponde al Block 2 y define el contenido que consumen frontend y API. El resultado del pulso es una **referencia adaptable** para educación y contexto dentro de Nuvyra. No es una etiqueta permanente, un diagnóstico psicológico ni asesoría financiera personalizada.
+Este archivo conserva la especificación histórica del Block 2 previa a la integración de `pulse-v1`. Sus contratos anteriores (`tolerance`, `clarity`, `behavioralRisk`, `behavioralRiskScore` y `ProfileResult`) no describen el flujo frontend vigente y no deben usarse para nuevas integraciones.
+
+El contrato implementado en `main` es provisional y mantiene separadas las dimensiones `experience`, `riskDisposition`, `horizon`, `objective` y `pressureResponse`, con `assessmentVersion = "pulse-v1"`. No combina las respuestas en una métrica global ni expone `BehavioralRiskScore` en el frontend.
+
+## Alcance histórico
+
+Esta especificación correspondió al Block 2 y documentó el contenido propuesto para frontend y API. El resultado del diseño original era una **referencia adaptable** para educación y contexto dentro de Nuvyra. No era una etiqueta permanente, un diagnóstico psicológico ni asesoría financiera personalizada.
 
 Las reglas usan únicamente respuestas y eventos observables del sandbox. No intentan inferir estados emocionales.
 

@@ -55,14 +55,32 @@ internal static class LearningContent
             ],
             "Una caída de precio es un dato; la decisión debe considerar también el plan y el contexto.",
             3,
-            "Completar la pregunta y revisar el escenario en el sandbox.")
+            "Completar la pregunta y revisar el escenario en el sandbox."),
+        new("lesson.diversification", "El riesgo de poner todos los huevos en la misma canasta",
+            "Comprender cómo la concentración extrema de activos amplifica la exposición a la volatilidad del mercado.",
+            "Tienes el 95% de tu portafolio virtual invertido en un solo activo tecnológico que ha subido mucho, pero hoy experimenta una corrección fuerte del 15%.",
+            "Concentrar todo el capital en un único instrumento significa que tu bienestar financiero depende exclusivamente del comportamiento de ese activo específico. Aunque el potencial de crecimiento puede parecer atractivo, la falta de diversificación elimina el amortiguador ante movimientos adversos del mercado.",
+            "¿Cuál es el efecto principal de mantener una concentración del 95% en un solo activo frente a una caída imprevista?",
+            [
+                "Toda la cartera absorbe el impacto de manera directa y proporcional al peso del activo.",
+                "El riesgo se neutraliza automáticamente si el activo subió el mes pasado.",
+                "Las pérdidas se dividen entre los mercados globales sin afectar tu cuenta."
+            ],
+            [
+                "Correcto. Al estar concentrado, la volatilidad del activo se transfiere íntegramente a tu patrimonio global sin ningún escudo de diversificación.",
+                "Incorrecto. El rendimiento pasado no elimina la exposición actual ante caídas repentinas.",
+                "Incorrecto. Los mercados externos no absorben las pérdidas de una posición individual concentrada."
+            ],
+            "La diversificación no elimina el riesgo de mercado, pero evita que un solo evento adverso comprometa la totalidad de tu capital.",
+            3,
+            "Ejecutar una acción de rebalanceo o diversificación en el sandbox.")
     ];
 
     public static readonly IReadOnlyCollection<CourseModuleContract> Course =
     [
         new("module.risk", "Entender el riesgo", "Identificar que riesgo y pérdida potencial no son lo mismo que fracaso.", "lesson.volatility", "Completar la microlección de volatilidad.", "Registrar una primera decisión virtual y anotar qué dato del escenario la cambió."),
         new("module.volatility", "Leer la volatilidad", "Observar movimientos sin convertir una variación diaria en una conclusión automática.", "lesson.volatility", "Comparar una caída simulada con el horizonte elegido.", "Ejecutar una simulación de caída y revisar el porcentaje de movimiento."),
-        new("module.position", "Construir una posición", "Entender cómo el tamaño de una posición cambia su peso dentro del portafolio.", "lesson.volatility", "Crear una posición virtual y observar su concentración.", "Comprar una cantidad virtual y revisar el peso de la posición."),
+        new("module.position", "Construir una posición", "Entender cómo el tamaño de una posición cambia su peso dentro del portafolio.", "lesson.diversification", "Crear una posición virtual y observar su concentración.", "Comprar una cantidad virtual y revisar el peso de la posición."),
         new("module.biases", "Reconocer sesgos", "Reconocer señales observables asociadas con FOMO y venta de pánico sin atribuir estados emocionales.", "lesson.volatility", "Identificar al menos una señal observable en un caso simulado.", "Revisar una compra después de una subida o una venta después de una caída."),
         new("module.practice", "Practicar antes de decidir", "Usar contexto, evidencia y horizonte antes de continuar una operación.", "lesson.volatility", "Elegir esperar, revisar evidencia o continuar en una intervención.", "Abrir 'Antes de vender', revisar las métricas y registrar una decisión.")
     ];

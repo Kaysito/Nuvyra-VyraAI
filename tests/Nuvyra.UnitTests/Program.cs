@@ -116,6 +116,22 @@ var checks = new (string Name, Action Run)[]
         var portfolio = service.GetPortfolio();
         Ensure(portfolio.Positions.Count == 1 && portfolio.Positions.Single().Quantity > 0, "Equivalent symbols should share one position.");
     }),
+    ("Before sell compares deterministic consequences without a psychological score", () =>
+    {
+        var service = new NuvyraDemoService(new DemoMarketDataProvider());
+        service.Buy(new("BTC", 1_000m));
+        service.SimulateCrash();
+        var intervention = service.BeforeSell(new("BTC"));
+        Ensure(intervention.Scenarios.Count == 3, "Before sell must compare three alternatives.");
+        Ensure(intervention.Scenarios.Single(item => item.Code == "sellAll").RemainingExposure == 0m,
+            "Selling all must leave no exposure.");
+        Ensure(intervention.Scenarios.Single(item => item.Code == "sellHalf").CashReleased == 360m,
+            "Selling half must release half of the crashed position value.");
+        Ensure(intervention.Scenarios.Single(item => item.Code == "hold").ProfitLossRecognized == 0m,
+            "Holding must not recognize a virtual result.");
+        Ensure(intervention.ObservedSignals.Contains("sharpDrop") && intervention.ObservedSignals.Contains("positionAtLoss"),
+            "The intervention must expose observable facts instead of an inferred emotion.");
+    }),
     ("Course is non-empty and contains modules", () =>
     {
         var service = new NuvyraDemoService(new DemoMarketDataProvider());

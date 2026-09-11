@@ -45,7 +45,8 @@ public sealed record LocalProgressContract(
 );
 
 public sealed record BeforeSellRequest(string Symbol);
-public sealed record InterventionResponse(Guid Id, string Symbol, decimal CurrentLossPercent, int UrgencyScore, string Explanation, IReadOnlyCollection<string> Alternatives, string? Choice);
+public sealed record DecisionScenarioResponse(string Code, string Label, decimal CashReleased, decimal RemainingExposure, decimal ProfitLossRecognized, string Context);
+public sealed record InterventionResponse(Guid Id, string Symbol, decimal CurrentLossPercent, string Explanation, IReadOnlyCollection<string> ObservedSignals, IReadOnlyCollection<DecisionScenarioResponse> Scenarios, IReadOnlyCollection<string> Alternatives, string? Choice, DateTimeOffset CreatedAt);
 public sealed record DecisionRequest(string Choice);
 public sealed record BehavioralSignalResponse(string Type, string Symbol, string Explanation, DateTimeOffset ObservedAt);
 public sealed record InsightProfileContext(string Experience, string RiskDisposition, string Horizon, string Objective, string PressureResponse, string AssessmentVersion);

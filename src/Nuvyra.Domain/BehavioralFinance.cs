@@ -67,6 +67,22 @@ public sealed class VirtualPortfolio
     }
 }
 
-public sealed record DecisionIntervention(Guid Id, string Symbol, decimal CurrentLossPercent, int UrgencyScore,
-    string Explanation, IReadOnlyCollection<DecisionChoice> Alternatives, DateTimeOffset CreatedAt, DecisionChoice? Choice = null);
+public sealed record DecisionScenario(
+    string Code,
+    string Label,
+    decimal CashReleased,
+    decimal RemainingExposure,
+    decimal ProfitLossRecognized,
+    string Context);
+
+public sealed record DecisionIntervention(
+    Guid Id,
+    string Symbol,
+    decimal CurrentLossPercent,
+    string Explanation,
+    IReadOnlyCollection<string> ObservedSignals,
+    IReadOnlyCollection<DecisionScenario> Scenarios,
+    IReadOnlyCollection<DecisionChoice> Alternatives,
+    DateTimeOffset CreatedAt,
+    DecisionChoice? Choice = null);
 public sealed record BehavioralSignal(BehavioralSignalType Type, string Symbol, string Explanation, DateTimeOffset ObservedAt);

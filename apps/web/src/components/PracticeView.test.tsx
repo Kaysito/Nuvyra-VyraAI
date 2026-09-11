@@ -83,12 +83,12 @@ describe("PracticeView", () => {
     expect(scenarios.find(item => item.code === "hold")?.profitLossRecognized).toBe(0);
   });
 
-  it("awards each educational journey milestone only once", () => {
-    const event = { code: "contextReviewed" as const, title: "Contexto revisado", detail: "Comparaste alternativas.", points: 15 };
+  it("records each educational journey milestone only once without awarding context points", () => {
+    const event = { code: "contextReviewed" as const, title: "Contexto revisado", detail: "Comparaste alternativas.", points: 0 };
     const first = addJourneyEvent(INITIAL_PRACTICE_SESSION, event);
     const duplicate = addJourneyEvent(first, event);
-    expect(first.vyraPoints).toBe(15);
-    expect(duplicate.vyraPoints).toBe(15);
+    expect(first.vyraPoints).toBe(0);
+    expect(duplicate.vyraPoints).toBe(0);
     expect(duplicate.events).toHaveLength(1);
   });
 

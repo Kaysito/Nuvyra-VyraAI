@@ -34,12 +34,16 @@ export function PracticeView({
   profile,
   session,
   onSessionChange,
+  onPositionCreated,
+  onDecisionCompleted,
   totalVyraPoints,
 }: {
   mode: "practice" | "market" | "portfolio";
   profile: PulseProfile | null;
   session: PracticeSession;
   onSessionChange: (session: PracticeSession) => void;
+  onPositionCreated?: () => void;
+  onDecisionCompleted?: () => void;
   totalVyraPoints?: number;
 }) {
   const [intervention, setIntervention] = useState(false);
@@ -106,6 +110,7 @@ export function PracticeView({
     onSessionChange(addJourneyEvent({ ...session, boughtSymbol: asset.symbol }, {
       code: "positionCreated", title: "Posición virtual creada", detail: `Invertiste $1,000 virtuales en ${asset.symbol}.`, points: 10,
     }));
+    onPositionCreated?.();
     setSandboxBusy(false);
   };
 
@@ -113,7 +118,7 @@ export function PracticeView({
     setSandboxBusy(true);
     try { await apiClient.simulateCrash(); } catch { /* Use the deterministic local scenario. */ }
     onSessionChange(addJourneyEvent({ ...session, crash: true }, {
-      code: "crashObserved", title: "Caída observada", detail: "Revisaste un movimiento de −28 % sin dinero real.", points: 10,
+      code: "crashObserved", title: "Caída observada", detail: "Revisaste un movimiento de −28 % sin dinero real.", points: 0,
     }));
     setSandboxBusy(false);
   };
@@ -161,7 +166,7 @@ export function PracticeView({
       />
       <Stat
         label="VYRAPOINTS"
-        value={`${totalVyraPoints ?? session.vyraPoints ?? 0} VP`}
+         value={`${totalVyraPoints ?? 0} VP`}
         delta="Premian aprendizaje y reflexión, nunca ganancias"
       />
       <Stat
@@ -249,7 +254,7 @@ export function PracticeView({
               .then(result => { if (Array.isArray(result.scenarios)) setInterventionData(result); })
               .catch(() => undefined);
             onSessionChange(addJourneyEvent(session, {
-              code: "contextReviewed", title: "Contexto revisado", detail: "Abriste Antes de vender y comparaste alternativas.", points: 15,
+               code: "contextReviewed", title: "Contexto revisado", detail: "Abriste Antes de vender y comparaste alternativas.", points: 0,
             }));
             setIntervention(true);
           }}
@@ -276,8 +281,9 @@ export function PracticeView({
       onChoose={value => {
         if (interventionData) apiClient.recordDecision(interventionData.id, decisionApiCode(value)).catch(() => undefined);
         onSessionChange(addJourneyEvent({ ...session, decision: value }, {
-          code: "decisionRecorded", title: "Decisión consciente registrada", detail: decisionMessages[value] + ".", points: value === "continueSale" ? 10 : 20,
+          code: "decisionRecorded", title: "Decisión consciente registrada", detail: decisionMessages[value] + ".", points: 0,
         }));
+        onDecisionCompleted?.();
         setIntervention(false);
       }}
     />}
@@ -296,17 +302,19 @@ function DecisionJourney({ events }: { events: PracticeEvent[] }) {
     <ol>{events.map(event => <li key={event.code}>
       <span className="journey-dot" aria-hidden="true">✓</span>
       <div><strong>{event.title}</strong><p>{event.detail}</p></div>
-      <b>+{event.points} VP</b>
+       {event.points > 0 && <b>+{event.points} VP</b>}
     </li>)}</ol>
     <small>No diagnosticamos emociones. Este historial describe únicamente acciones realizadas dentro del sandbox.</small>
   </section>;
 }
 
 function InsightSummary({ insight }: { insight: VyraInsightResponse }) {
+  const factors = Array.isArray(insight.factors) ? insight.factors : [];
+  const reflectionQuestions = Array.isArray(insight.reflectionQuestions) ? insight.reflectionQuestions : [];
   return <div className="vyra-insight" aria-live="polite">
     <p className="micro-label">FACTORES OBSERVADOS</p>
-    <ul>{insight.factors.slice(0, 3).map(factor => <li key={factor.code}>{factor.message}</li>)}</ul>
-    {insight.reflectionQuestions[0] && <p><strong>Para reflexionar:</strong> {insight.reflectionQuestions[0]}</p>}
+    <ul>{factors.slice(0, 3).map(factor => <li key={factor.code}>{factor.message}</li>)}</ul>
+    {reflectionQuestions[0] && <p><strong>Para reflexionar:</strong> {reflectionQuestions[0]}</p>}
     <small>{insight.disclaimer}</small>
   </div>;
 }

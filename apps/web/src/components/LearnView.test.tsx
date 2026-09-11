@@ -21,6 +21,13 @@ const lesson = {
   completionAction: "Completar la pregunta y revisar el escenario en el sandbox.",
 };
 
+const diversificationLesson = {
+  ...lesson,
+  id: "lesson.diversification",
+  title: "Diversificar sin perder contexto",
+  estimatedMinutes: 8,
+};
+
 const modules = [
   {
     id: "module.risk",
@@ -34,7 +41,7 @@ const modules = [
     id: "module.volatility",
     name: "Leer la volatilidad",
     objective: "Observar movimientos sin convertir una variación diaria en una conclusión automática.",
-    lessonId: "lesson.volatility",
+    lessonId: "lesson.diversification",
     completionCriterion: "Comparar una caída simulada con el horizonte elegido.",
     sandboxAction: "Ejecutar una simulación de caída.",
   },
@@ -44,7 +51,7 @@ function jsonResponse(body: unknown) {
   return Promise.resolve({ json: async () => body } as Response);
 }
 
-function mockLearningApi(lessons = [lesson], course = modules) {
+function mockLearningApi(lessons = [lesson, diversificationLesson], course = modules) {
   const fetchMock = vi.fn((url: string) =>
     url === "/api/learn/lessons" ? jsonResponse(lessons) : jsonResponse(course),
   );
@@ -97,6 +104,42 @@ describe("LearnView", () => {
     expect(onPractice).toHaveBeenCalledTimes(1);
   });
 
+  it("derives module progress from completed lesson IDs", async () => {
+    mockLearningApi([lesson], [{ ...modules[0], lessonId: "lesson.volatility" }, { ...modules[1], lessonId: "lesson.orphan" }]);
+    render(<LearnView onPractice={vi.fn()} completedLessonIds={new Set([lesson.id])} />);
+
+    expect(await screen.findByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("1 de 2 módulos")).toBeInTheDocument();
+    expect(screen.getAllByText("Completado")).toHaveLength(1);
+    expect(screen.getByText("Pendiente")).toBeInTheDocument();
+    expect(screen.getByText("Duración no disponible")).toBeInTheDocument();
+  });
+
+  it("resolves each module duration from its matching lesson", async () => {
+    mockLearningApi();
+    render(<LearnView onPractice={vi.fn()} />);
+
+    expect(await screen.findByRole("heading", { name: "Volatilidad no significa fracaso." })).toBeInTheDocument();
+    expect(screen.getByText("8 min")).toBeInTheDocument();
+    expect(screen.getAllByText("3 min")).toHaveLength(2);
+    expect(screen.getByText("Pendiente")).toBeInTheDocument();
+  });
+
+  it("reports a lesson completion only once", async () => {
+    const onLessonComplete = vi.fn();
+    mockLearningApi();
+    const user = userEvent.setup();
+    render(<LearnView onPractice={vi.fn()} onLessonComplete={onLessonComplete} />);
+
+    await user.click(await screen.findByRole("button", { name: lesson.options[1] }));
+    const practice = screen.getByRole("button", { name: /practicar este concepto/i });
+    await user.click(practice);
+    await user.click(practice);
+
+    expect(onLessonComplete).toHaveBeenCalledTimes(1);
+    expect(onLessonComplete).toHaveBeenCalledWith(lesson.id);
+  });
+
   it.each([0, 2])("gives contextual feedback for answer %s", async index => {
     mockLearningApi();
     const user = userEvent.setup();
@@ -122,5 +165,21 @@ describe("LearnView", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("No hay microlecciones disponibles.");
     expect(screen.queryByRole("button", { name: /practicar este concepto/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps the lesson usable when the course has no modules", async () => {
+    mockLearningApi([lesson], []);
+    render(<LearnView onPractice={vi.fn()} />);
+
+    expect(await screen.findByRole("heading", { name: "Volatilidad no significa fracaso." })).toBeInTheDocument();
+    expect(screen.getByText("0 de 0 módulos")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("shows a clean empty state when lessons and course are empty", async () => {
+    mockLearningApi([], []);
+    render(<LearnView onPractice={vi.fn()} />);
+
+    expect(await screen.findByRole("status")).toHaveTextContent("No hay microlecciones disponibles.");
   });
 });

@@ -21,6 +21,13 @@ const lesson = {
   completionAction: "Completar la pregunta y revisar el escenario en el sandbox.",
 };
 
+const diversificationLesson = {
+  ...lesson,
+  id: "lesson.diversification",
+  title: "Diversificar sin perder contexto",
+  estimatedMinutes: 8,
+};
+
 const modules = [
   {
     id: "module.risk",
@@ -34,7 +41,7 @@ const modules = [
     id: "module.volatility",
     name: "Leer la volatilidad",
     objective: "Observar movimientos sin convertir una variación diaria en una conclusión automática.",
-    lessonId: "lesson.volatility.advanced",
+    lessonId: "lesson.diversification",
     completionCriterion: "Comparar una caída simulada con el horizonte elegido.",
     sandboxAction: "Ejecutar una simulación de caída.",
   },
@@ -44,7 +51,7 @@ function jsonResponse(body: unknown) {
   return Promise.resolve({ json: async () => body } as Response);
 }
 
-function mockLearningApi(lessons = [lesson], course = modules) {
+function mockLearningApi(lessons = [lesson, diversificationLesson], course = modules) {
   const fetchMock = vi.fn((url: string) =>
     url === "/api/learn/lessons" ? jsonResponse(lessons) : jsonResponse(course),
   );
@@ -98,7 +105,7 @@ describe("LearnView", () => {
   });
 
   it("derives module progress from completed lesson IDs", async () => {
-    mockLearningApi();
+    mockLearningApi([lesson], [{ ...modules[0], lessonId: "lesson.volatility" }, { ...modules[1], lessonId: "lesson.orphan" }]);
     render(<LearnView onPractice={vi.fn()} completedLessonIds={new Set([lesson.id])} />);
 
     expect(await screen.findByText("50%")).toBeInTheDocument();
@@ -106,6 +113,16 @@ describe("LearnView", () => {
     expect(screen.getAllByText("Completado")).toHaveLength(1);
     expect(screen.getByText("Pendiente")).toBeInTheDocument();
     expect(screen.getByText("Duración no disponible")).toBeInTheDocument();
+  });
+
+  it("resolves each module duration from its matching lesson", async () => {
+    mockLearningApi();
+    render(<LearnView onPractice={vi.fn()} />);
+
+    expect(await screen.findByRole("heading", { name: "Volatilidad no significa fracaso." })).toBeInTheDocument();
+    expect(screen.getByText("8 min")).toBeInTheDocument();
+    expect(screen.getAllByText("3 min")).toHaveLength(2);
+    expect(screen.getByText("Pendiente")).toBeInTheDocument();
   });
 
   it("reports a lesson completion only once", async () => {

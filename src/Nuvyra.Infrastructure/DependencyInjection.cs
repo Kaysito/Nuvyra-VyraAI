@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nuvyra.Application;
+using Nuvyra.Domain;
 
 namespace Nuvyra.Infrastructure;
 
@@ -20,11 +21,13 @@ public static class DependencyInjection
         });
 
         services.AddSingleton<IMarketDataProvider, DemoMarketDataProvider>();
+        services.AddSingleton<ContextualInsightEngine>();
         services.AddSingleton<ILiveMarketDataProvider>(provider => new CoinGeckoMarketDataProvider(
             provider.GetRequiredService<IHttpClientFactory>().CreateClient("CoinGecko"),
             configuration["MarketData:CoinGecko:ApiKey"],
             TimeSpan.FromSeconds(Math.Clamp(cacheSeconds, 5, 300))));
         services.AddSingleton<INuvyraDemoService, NuvyraDemoService>();
+        services.AddSingleton<IVyraInsightService, VyraInsightService>();
         return services;
     }
 }

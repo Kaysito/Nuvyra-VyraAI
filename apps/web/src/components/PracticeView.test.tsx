@@ -52,6 +52,7 @@ beforeEach(() => {
       id: "intervention-1",
       symbol: "ETH",
       currentLossPercent: -28,
+      volatilityScore: 96,
       explanation: "Contrasta el movimiento con tu plan.",
       observedSignals: ["sharpDrop", "positionAtLoss", "fullLiquidationIntent"],
       scenarios: [
@@ -114,7 +115,7 @@ describe("PracticeView", () => {
 
     expect(screen.getByRole("dialog", { name: /estás viendo una pérdida rápida/i })).toBeInTheDocument();
     expect(screen.getAllByText("Largo plazo").length).toBeGreaterThan(0);
-    expect(screen.getByText("Alta")).toBeInTheDocument();
+    expect(screen.getByText("Muy elevada")).toBeInTheDocument();
     expect(screen.getByText("Nuvyra explica y contextualiza. Tú decides.")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: /alternativas de venta/i })).toBeInTheDocument();
     expect(screen.getByText("Tres caminos, sin predicciones")).toBeInTheDocument();

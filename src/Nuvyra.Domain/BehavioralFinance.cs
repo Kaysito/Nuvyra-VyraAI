@@ -79,6 +79,7 @@ public sealed record DecisionIntervention(
     Guid Id,
     string Symbol,
     decimal CurrentLossPercent,
+    int VolatilityScore,
     string Explanation,
     IReadOnlyCollection<string> ObservedSignals,
     IReadOnlyCollection<DecisionScenario> Scenarios,

@@ -127,7 +127,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
                 new("hold", "Mantener", 0m, Money(currentValue), 0m,
                     "No genera efectivo ni reconoce la pérdida; conserva toda la exposición al mercado.")
             };
-            var intervention = new DecisionIntervention(Guid.NewGuid(), quote.Symbol, loss,
+            var intervention = new DecisionIntervention(Guid.NewGuid(), quote.Symbol, loss, quote.VolatilityScore,
                 "El mercado cayó con fuerza. Antes de vender, separa el movimiento del mercado de tu plan original. Nuvyra no bloquea tu decisión: te ayuda a verla con perspectiva.",
                 observedSignals, scenarios,
                 [DecisionChoice.Wait24Hours, DecisionChoice.ReviewEvidence, DecisionChoice.ContinueSale], DateTimeOffset.UtcNow);
@@ -171,6 +171,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
         item.Id,
         item.Symbol,
         item.CurrentLossPercent,
+        item.VolatilityScore,
         item.Explanation,
         item.ObservedSignals,
         item.Scenarios.Select(value => new DecisionScenarioResponse(value.Code, value.Label, value.CashReleased,

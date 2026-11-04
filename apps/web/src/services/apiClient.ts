@@ -47,6 +47,7 @@ export type InterventionResponse = {
   id: string;
   symbol: string;
   currentLossPercent: number;
+  volatilityScore: number;
   explanation: string;
   observedSignals: string[];
   scenarios: DecisionScenarioResponse[];

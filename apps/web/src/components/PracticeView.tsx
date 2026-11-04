@@ -273,6 +273,7 @@ export function PracticeView({
 
     {intervention && <Intervention
       horizon={horizon}
+      intervention={interventionData}
       insight={insight}
       insightState={insightState}
       scenarios={interventionData?.scenarios ?? []}
@@ -377,6 +378,7 @@ function Stat({
 
 function Intervention({
   horizon,
+  intervention,
   insight,
   insightState,
   scenarios,
@@ -385,6 +387,7 @@ function Intervention({
   onChoose,
 }: {
   horizon: string;
+  intervention: InterventionResponse | null;
   insight: VyraInsightResponse | null;
   insightState: "idle" | "loading" | "ready" | "error";
   scenarios: DecisionScenarioResponse[];
@@ -416,14 +419,14 @@ function Intervention({
       <h2 id="intervention-title">Estás viendo una pérdida rápida, no toda la historia.</h2>
       <p>Vender sigue siendo tu decisión. Antes, contrasta el movimiento con el plan que definiste.</p>
       <div className="intervention-metrics">
-        <div><span>Movimiento</span><strong className="negative">−28%</strong></div>
-        <div><span>Volatilidad</span><strong>Alta</strong></div>
+        <div><span>Movimiento</span><strong className="negative">{formatSignedPercent(intervention?.currentLossPercent ?? 0)}</strong></div>
+        <div><span>Volatilidad</span><strong>{volatilityLabel(intervention?.volatilityScore ?? 0)}</strong></div>
         <div><span>Horizonte</span><strong>{horizon}</strong></div>
       </div>
       {insightState === "loading" && <p className="insight-loading" role="status">VyraAI está contrastando el escenario con tu pulso…</p>}
       {insightState === "error" && <p className="insight-loading" role="status">No pudimos generar contexto adicional. Tú conservas el control de la decisión.</p>}
       {insightState === "ready" && insight && <InsightSummary insight={insight} />}
-      <div className="scenario-heading"><div><p className="micro-label">COMPARA CONSECUENCIAS</p><h3>Tres caminos, sin predicciones</h3></div><small>Valores calculados sobre $1,000 virtuales después de la caída.</small></div>
+      <div className="scenario-heading"><div><p className="micro-label">COMPARA CONSECUENCIAS</p><h3>Tres caminos, sin predicciones</h3></div><small>Valores calculados por el sandbox virtual.</small></div>
       <div className="scenario-grid" role="group" aria-label="Alternativas de venta">
         {scenarios.map(scenario => <article key={scenario.code} className="scenario-card">
           <span>{scenario.label}</span>
@@ -449,4 +452,14 @@ function Intervention({
 function formatSignedMoney(value: number) {
   if (value === 0) return "$0.00";
   return `${value > 0 ? "+" : "−"}${formatMarketPrice(Math.abs(value))}`;
+}
+
+function formatSignedPercent(value: number) {
+  return `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(1)}%`;
+}
+
+function volatilityLabel(score: number) {
+  if (score >= 80) return "Muy elevada";
+  if (score >= 65) return "Elevada";
+  return "Moderada";
 }

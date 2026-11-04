@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { clearAuthSession, readAuthSession, type AuthSession } from "./auth/authSession";
 import { AppShell, type Page } from "./components/AppShell";
+import { AuthView } from "./components/AuthView";
 import { LearnView } from "./components/LearnView";
 import { PracticeView } from "./components/PracticeView";
 import { INITIAL_PRACTICE_SESSION, type PracticeSession } from "./components/practiceSession";
@@ -22,8 +24,22 @@ import {
   getPressureResponseLabel,
   getRiskDispositionLabel,
 } from "./pulse/pulsePresentation";
+import { apiClient } from "./services/apiClient";
+
+// November Alpha uses a local/provisional identity. Authentication remains an
+// explicit opt-in test mode so a built local demo does not require PostgreSQL.
+const demoBypassEnabled = import.meta.env.VITE_DEMO_BYPASS_AUTH !== "false"
+  && new URLSearchParams(window.location.search).get("login") !== "1";
+
+const DEMO_SESSION: AuthSession = {
+  email: "demo@nuvyra.local",
+  accessToken: "demo-mode",
+  refreshToken: "",
+  expiresAt: Number.MAX_SAFE_INTEGER,
+};
 
 export function App() {
+  const [session, setSession] = useState<AuthSession | null>(() => readAuthSession() ?? (demoBypassEnabled ? DEMO_SESSION : null));
   const [page, setPage] = useState<Page>("Inicio");
   const [profile, setProfile] = useState<PulseProfile | null>(null);
   const [practiceSession, setPracticeSession] = useState<PracticeSession>(() => ({ ...INITIAL_PRACTICE_SESSION }));
@@ -57,12 +73,30 @@ export function App() {
   const finishPulse = (result: PulseProfile) => {
     award("pulse:completed", PULSE_COMPLETED);
     setProfile(result);
+    void apiClient.assessProfile(result).catch(() => { /* The local demo remains usable if the API is temporarily unavailable. */ });
     navigate("Aprende");
   };
 
+  const authenticated = (nextSession: AuthSession) => {
+    setSession(nextSession);
+    setPage("Pulso");
+  };
+
+  const signOut = () => {
+    clearAuthSession();
+    setSession(null);
+    setPage("Inicio");
+    setProfile(null);
+    setPracticeSession({ ...INITIAL_PRACTICE_SESSION });
+  };
+
+  if (!session) return <AuthView onAuthenticated={authenticated} />;
+
   const profileExperience = profile ? getExperienceLabel(profile.experience) : "En calibración";
 
-  return <AppShell page={page} onNavigate={navigate} profile={{ experience: profileExperience }} vyraPoints={vyraPoints.points}>
+  return <AppShell page={page} onNavigate={navigate} profile={{ experience: profileExperience }} vyraPoints={vyraPoints.points}
+    userEmail={demoBypassEnabled ? undefined : session.email}
+    onSignOut={demoBypassEnabled ? undefined : signOut}>
     {page === "Inicio" && <HomeView
       pulseComplete={pulseComplete}
       profile={profile}

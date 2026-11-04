@@ -250,6 +250,7 @@ static async Task CheckLiveMarketProvider()
     Ensure(first.Count == 3, "Live provider must map the three supported assets.");
     Ensure(first.Single(quote => quote.Symbol == "BTC").Price == 70_000m, "CoinGecko price was not mapped.");
     Ensure(first.All(quote => quote.Source == "coingecko"), "Live quotes must identify their source.");
+    Ensure(first.All(quote => quote.Provenance == DataProvenance.ExternalCurrent), "Live quotes must identify external current provenance.");
     Ensure(successHandler.CallCount == 1 && ReferenceEquals(first, second), "Fresh quotes must be served from cache.");
     Console.WriteLine("PASS: Live market maps CoinGecko and uses the short cache");
 
@@ -266,7 +267,7 @@ static async Task CheckVyraInsightService()
 {
     var sandbox = new DemoMarketDataProvider();
     var live = new StaticLiveMarketProvider([
-        new("BTC", "Bitcoin", 70_000m, -2m, 72, DateTimeOffset.UtcNow, "coingecko")
+        new("BTC", "Bitcoin", 70_000m, -2m, 72, DateTimeOffset.UtcNow, "coingecko", DataProvenance.ExternalCurrent)
     ]);
     var service = new VyraInsightService(live, sandbox, new ContextualInsightEngine());
     var profile = new InsightProfileContext("beginner", "medium", "long", "growth", "pauseAndReview", "pulse-v1");
@@ -274,6 +275,7 @@ static async Task CheckVyraInsightService()
     var insight = await service.GenerateAsync(new(
         "BTC", "sell", "sandbox", "crash", profile, 45m));
     Ensure(insight.IsEducational && insight.Source == "vyra-rules-v0.1", "VyraAI must identify its educational rule source.");
+    Ensure(insight.Provenance == DataProvenance.SystemCalculated && insight.MarketProvenance == DataProvenance.Simulated, "Crash insights must identify calculated output and simulated market provenance.");
     Ensure(insight.MarketSource == "sandbox-simulation", "Crash insights must identify simulated market data.");
     Ensure(insight.BehavioralSignals.Contains("rapidDecisionAfterDrop"), "Selling after a crash must expose the observable timing signal.");
     Ensure(insight.BehavioralSignals.Contains("planMismatch"), "A long growth profile must be contrasted with a rapid sale.");
@@ -284,7 +286,7 @@ static async Task CheckVyraInsightService()
 
     var marketInsight = await service.GenerateAsync(new(
         "BTC", "explore", "market", "baseline", null, 0m));
-    Ensure(marketInsight.MarketSource == "coingecko", "Market insights must use the live provider source.");
+    Ensure(marketInsight.MarketSource == "coingecko" && marketInsight.MarketProvenance == DataProvenance.ExternalCurrent, "Market insights must identify the live provider provenance.");
     Ensure(marketInsight.Factors.Any(factor => factor.Code == "uncalibrated_profile"), "Missing profiles must be disclosed.");
     Console.WriteLine("PASS: VyraAI supports live market context without a profile");
 }

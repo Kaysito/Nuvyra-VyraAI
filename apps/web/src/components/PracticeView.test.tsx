@@ -74,13 +74,15 @@ beforeEach(() => {
       behavioralSignals: ["rapidDecisionAfterDrop"],
       source: "vyra-rules-v0.1",
       marketSource: "sandbox-simulation",
+      provenance: "SYSTEM_CALCULATED",
+      marketProvenance: "SIMULATED",
       isEducational: true,
       generatedAt: "2026-09-11T12:00:00Z",
       disclaimer: "Contenido educativo. VyraAI contextualiza información; no decide por ti.",
     } : [
-      { symbol: "BTC", name: "Bitcoin", price: 70000, change24Hours: 3.1, volatilityScore: 72, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
-      { symbol: "ETH", name: "Ethereum", price: 3500, change24Hours: -1.2, volatilityScore: 79, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
-      { symbol: "SOL", name: "Solana", price: 180, change24Hours: 4.8, volatilityScore: 88, asOf: "2026-09-11T12:00:00Z", source: "coingecko" },
+      { symbol: "BTC", name: "Bitcoin", price: 70000, change24Hours: 3.1, volatilityScore: 72, asOf: "2026-09-11T12:00:00Z", source: "coingecko", provenance: "EXTERNAL_CURRENT" },
+      { symbol: "ETH", name: "Ethereum", price: 3500, change24Hours: -1.2, volatilityScore: 79, asOf: "2026-09-11T12:00:00Z", source: "coingecko", provenance: "EXTERNAL_CURRENT" },
+      { symbol: "SOL", name: "Solana", price: 180, change24Hours: 4.8, volatilityScore: 88, asOf: "2026-09-11T12:00:00Z", source: "coingecko", provenance: "EXTERNAL_CURRENT" },
     ]),
   })));
 });

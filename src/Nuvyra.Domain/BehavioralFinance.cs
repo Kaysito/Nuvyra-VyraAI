@@ -12,7 +12,7 @@ public sealed record InvestorProfile(Guid Id, ExperienceLevel Experience, RiskDi
     InvestmentHorizon Horizon, InvestmentObjective Objective, PressureResponse PressureResponse,
     bool IsProvisional, string AssessmentVersion, DateTimeOffset CreatedAt);
 public sealed record MarketQuote(string Symbol, string Name, decimal Price, decimal Change24Hours, int VolatilityScore,
-    DateTimeOffset? AsOf = null, string Source = "demo");
+    DateTimeOffset? AsOf = null, string Source = "demo", string Provenance = "SIMULATED");
 
 public sealed record Position(string Symbol, decimal Quantity, decimal AveragePrice)
 {

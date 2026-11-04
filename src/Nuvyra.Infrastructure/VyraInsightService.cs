@@ -48,6 +48,8 @@ public sealed class VyraInsightService(
             insight.BehavioralSignals,
             insight.Source,
             insight.MarketSource,
+            DataProvenance.SystemCalculated,
+            quote.Provenance,
             true,
             insight.GeneratedAt,
             "Contenido educativo. VyraAI contextualiza información; no predice rendimientos ni decide por ti.");

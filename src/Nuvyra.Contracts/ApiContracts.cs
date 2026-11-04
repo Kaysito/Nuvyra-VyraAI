@@ -1,5 +1,17 @@
 namespace Nuvyra.Contracts;
 
+public static class DataProvenance
+{
+    public const string UserProvided = "USER_PROVIDED";
+    public const string SystemCalculated = "SYSTEM_CALCULATED";
+    public const string Simulated = "SIMULATED";
+    public const string ExternalHistorical = "EXTERNAL_HISTORICAL";
+    public const string ExternalCurrent = "EXTERNAL_CURRENT";
+    public const string ModelDerived = "MODEL_DERIVED";
+    public const string AiGenerated = "AI_GENERATED";
+    public const string Unavailable = "UNAVAILABLE";
+}
+
 /// <summary>
 /// Flujo Educativo de Nuvyra:
 /// 1. Pulso (PulseQuestionContract) -> El usuario responde un test inicial para medir sesgos y perfil.
@@ -15,7 +27,7 @@ public sealed record BuyOrderRequest(string Symbol, decimal Amount);
 public sealed record SellOrderRequest(string Symbol, decimal Amount);
 public sealed record PositionResponse(string Symbol, decimal Quantity, decimal AveragePrice, decimal CurrentPrice, decimal ReturnPercent);
 public sealed record PortfolioResponse(decimal Cash, decimal TotalValue, IReadOnlyCollection<PositionResponse> Positions);
-public sealed record QuoteResponse(string Symbol, string Name, decimal Price, decimal Change24Hours, int VolatilityScore, DateTimeOffset AsOf, string Source);
+public sealed record QuoteResponse(string Symbol, string Name, decimal Price, decimal Change24Hours, int VolatilityScore, DateTimeOffset AsOf, string Source, string Provenance = DataProvenance.Simulated);
 public sealed record LessonResponse(string Id, string Title, string Summary, int EstimatedMinutes);
 public sealed record PulseOptionContract(string Text, string Value, string Dimension, string Explanation);
 public sealed record PulseQuestionContract(string Id, string Text, string Dimension, IReadOnlyCollection<PulseOptionContract> Options);
@@ -48,7 +60,7 @@ public sealed record BeforeSellRequest(string Symbol);
 public sealed record DecisionScenarioResponse(string Code, string Label, decimal CashReleased, decimal RemainingExposure, decimal ProfitLossRecognized, string Context);
 public sealed record InterventionResponse(Guid Id, string Symbol, decimal CurrentLossPercent, string Explanation, IReadOnlyCollection<string> ObservedSignals, IReadOnlyCollection<DecisionScenarioResponse> Scenarios, IReadOnlyCollection<string> Alternatives, string? Choice, DateTimeOffset CreatedAt);
 public sealed record DecisionRequest(string Choice);
-public sealed record BehavioralSignalResponse(string Type, string Symbol, string Explanation, DateTimeOffset ObservedAt);
+public sealed record BehavioralSignalResponse(string Type, string Symbol, string Explanation, DateTimeOffset ObservedAt, string Provenance = DataProvenance.SystemCalculated);
 public sealed record InsightProfileContext(string Experience, string RiskDisposition, string Horizon, string Objective, string PressureResponse, string AssessmentVersion);
 public sealed record VyraInsightRequest(string Symbol, string IntendedAction, string Environment, string Scenario, InsightProfileContext? Profile, decimal VirtualExposurePercent = 0);
 public sealed record InsightFactorResponse(string Code, string Message);
@@ -61,6 +73,8 @@ public sealed record VyraInsightResponse(
     IReadOnlyCollection<string> BehavioralSignals,
     string Source,
     string MarketSource,
+    string Provenance,
+    string MarketProvenance,
     bool IsEducational,
     DateTimeOffset GeneratedAt,
     string Disclaimer);

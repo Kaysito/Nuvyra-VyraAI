@@ -99,7 +99,8 @@ public sealed class CoinGeckoMarketDataProvider(
             asset.FallbackChange,
             asset.VolatilityScore,
             now,
-            "demo-fallback")).ToArray();
+            "demo-fallback",
+            "SIMULATED")).ToArray();
     }
 
     private static MarketQuote ToQuote(AssetDefinition asset, IReadOnlyDictionary<string, CoinGeckoPrice> payload)
@@ -118,7 +119,8 @@ public sealed class CoinGeckoMarketDataProvider(
             price.Change24Hours,
             asset.VolatilityScore,
             asOf,
-            "coingecko");
+            "coingecko",
+            "EXTERNAL_CURRENT");
     }
 
     private sealed record AssetDefinition(

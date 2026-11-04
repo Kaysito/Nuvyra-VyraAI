@@ -32,7 +32,7 @@ public sealed class NuvyraDemoService : INuvyraDemoService
 
     public IReadOnlyCollection<PulseQuestionContract> GetPulseQuestions() => LearningContent.Pulse;
 
-    public IReadOnlyCollection<QuoteResponse> GetQuotes() => _marketData.GetQuotes().Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source)).ToArray();
+    public IReadOnlyCollection<QuoteResponse> GetQuotes() => _marketData.GetQuotes().Select(quote => new QuoteResponse(quote.Symbol, quote.Name, quote.Price, quote.Change24Hours, quote.VolatilityScore, quote.AsOf ?? DateTimeOffset.UtcNow, quote.Source, quote.Provenance)).ToArray();
 
     public PositionResponse Buy(BuyOrderRequest request)
     {

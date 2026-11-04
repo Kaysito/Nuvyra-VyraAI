@@ -6,6 +6,16 @@ export type ProfileAssessmentRequest = {
   pressureResponse: string;
 };
 
+export type DataProvenance =
+  | "USER_PROVIDED"
+  | "SYSTEM_CALCULATED"
+  | "SIMULATED"
+  | "EXTERNAL_HISTORICAL"
+  | "EXTERNAL_CURRENT"
+  | "MODEL_DERIVED"
+  | "AI_GENERATED"
+  | "UNAVAILABLE";
+
 export type ProfileResponse = ProfileAssessmentRequest & {
   id: string;
   isProvisional: boolean;
@@ -21,6 +31,7 @@ export type QuoteResponse = {
   volatilityScore: number;
   asOf: string;
   source: string;
+  provenance: DataProvenance;
 };
 
 export type DecisionScenarioResponse = {
@@ -53,6 +64,8 @@ export type VyraInsightResponse = {
   behavioralSignals: string[];
   source: string;
   marketSource: string;
+  provenance: DataProvenance;
+  marketProvenance: DataProvenance;
   isEducational: boolean;
   generatedAt: string;
   disclaimer: string;
@@ -109,7 +122,10 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): P
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${apiBaseUrl}${path}`, { ...init, signal: controller.signal });
+    const session = readAuthSession();
+    const headers = new Headers(init?.headers);
+    if (session) headers.set("Authorization", `Bearer ${session.accessToken}`);
+    const response = await fetch(`${apiBaseUrl}${path}`, { ...init, headers, signal: controller.signal });
     // Lightweight test doubles may omit `ok`; only an explicit false is an HTTP failure.
     if (response.ok === false) {
       let error: { code?: string; message?: string; traceId?: string } = {};
@@ -134,7 +150,32 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): P
   }
 }
 
+async function authRequest<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    let message = "No pudimos completar el acceso.";
+    try {
+      const problem = await response.json() as { title?: string; detail?: string; errors?: Record<string, string[]> };
+      message = problem.detail ?? problem.title ?? Object.values(problem.errors ?? {}).flat()[0] ?? message;
+    } catch { /* Identity may return an empty error body. */ }
+    throw new ApiClientError(message, response.status, "authentication_error");
+  }
+  if (response.status === 204 || response.headers.get("content-length") === "0") return undefined as T;
+  const text = await response.text();
+  return text ? JSON.parse(text) as T : undefined as T;
+}
+
 export const apiClient = {
+  register: (email: string, password: string) => authRequest<void>("/api/auth/register", { email, password }),
+  login: (email: string, password: string) => authRequest<{ tokenType: string; accessToken: string; expiresIn: number; refreshToken: string }>(
+    "/api/auth/login?useCookies=false",
+    { email, password },
+  ),
+  getMyProfile: () => request<ProfileResponse | undefined>("/api/profiles/me"),
   getHealth: () => request<{ status: string; product: string; heritage: string }>("/api/health"),
   getQuotes: () => request<QuoteResponse[]>("/api/market/quotes"),
   getInsight: (context: VyraInsightRequest) => request<VyraInsightResponse>("/api/guide/insights", {
@@ -168,3 +209,4 @@ export const apiClient = {
     body: JSON.stringify(profile),
   }),
 };
+import { readAuthSession } from "../auth/authSession";

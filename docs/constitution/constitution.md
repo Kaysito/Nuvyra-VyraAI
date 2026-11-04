@@ -299,8 +299,8 @@ Se revisará al concluir November Alpha y antes de cualquier despliegue público
 
 ## 22. Anexo normativo A — November Alpha 2026
 
-**Estado:** activo sólo para la entrega académica prevista.  
-**Fecha objetivo:** 30 de noviembre de 2026.  
+**Estado:** activo sólo para la entrega académica prevista.
+**Fecha objetivo:** 30 de noviembre de 2026.
 **Presupuesto incremental de infraestructura y servicios obligatorios:** **$0 MXN**.
 **Entorno:** local; el recorrido central debe ser offline-capable.
 

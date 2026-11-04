@@ -1,6 +1,6 @@
 # SPEC-000 — Nuvyra November Alpha
 
-Status: Clarification
+Status: Approved
 Priority: Critical
 Owner: Product + Architecture
 Target: November Alpha
@@ -113,10 +113,10 @@ Todo lo indicado en November Alpha como explícitamente no requerido, además de
 
 ## Open Questions
 
-1. ¿Cuál es exactamente el guion mínimo de demo que se aprobará como recorrido oficial?
-2. ¿La Alpha debe incluir autenticación local o la demo opera con un usuario provisional?
-3. ¿Qué partes de la implementación actual de PostgreSQL/autenticación pertenecen a la Alpha y cuáles quedan fuera del recorrido offline?
-4. ¿Qué criterios visuales mínimos deben aprobarse para considerar la experiencia “pulida”?
+1. ~~¿Cuál es exactamente el guion mínimo de demo que se aprobará como recorrido oficial?~~ Resuelto en la sección Demo Scenario; se adopta el recorrido existente del README.
+2. ~~¿La Alpha debe incluir autenticación local o la demo opera con un usuario provisional?~~ La demo opera con un usuario provisional/local; autenticación no es requisito del recorrido central.
+3. ~~¿Qué partes de la implementación actual de PostgreSQL/autenticación pertenecen a la Alpha y cuáles quedan fuera del recorrido offline?~~ PostgreSQL y autenticación quedan fuera de `SPEC-000`; cualquier incorporación futura requiere una spec propia.
+4. ~~¿Qué criterios visuales mínimos deben aprobarse para considerar la experiencia “pulida”?~~ Responsive móvil/escritorio, estados de carga/error y recorrido completo sin bloqueos; no se define un rediseño visual en esta spec.
 
 ## Demo Scenario
 
@@ -131,4 +131,20 @@ Todo lo indicado en November Alpha como explícitamente no requerido, además de
 
 ## Traceability
 
-La trazabilidad detallada se completará después de la fase Clarification y la aprobación humana del alcance.
+| Requirement | Plan | Task | Implementation | Test |
+|---|---|---|---|---|
+| `REQ-ALPHA-001` | PLAN-ALPHA-001 | T008 | Demo local existente | T015 |
+| `REQ-ALPHA-002` | PLAN-ALPHA-001 | T001, T009 | Sandbox virtual | T016 |
+| `REQ-ALPHA-003` | PLAN-ALPHA-001 | T002, T010 | Before Selling | T017 |
+| `REQ-ALPHA-004` | PLAN-ALPHA-001 | T003, T011 | Domain/Application | T018 |
+| `REQ-ALPHA-005` | PLAN-ALPHA-001 | T004, T012 | Behavioral signals/Vyra | T019 |
+| `REQ-ALPHA-006` | PLAN-ALPHA-001 | T005, T013 | Local configuration | T020 |
+
+## Clarification Record
+
+- Decision: se aprueba el recorrido descrito en Demo Scenario como alcance mínimo.
+- Decision: la Alpha usa usuario local/provisional y datos virtuales.
+- Decision: PostgreSQL, autenticación y servicios externos no son requisitos de `SPEC-000`.
+- Decision: la calidad visual se valida sobre el flujo existente, sin rediseño no solicitado.
+- Approved by: Product owner, mediante instrucción “adelante”.
+- Date: 2026-11-03

@@ -18,6 +18,8 @@ Durante **Clarification** se revisan ambigüedades, contradicciones, requisitos 
 
 Una funcionalidad sencilla debe tener documentación sencilla. No se crean documentos por burocracia.
 
+El contexto entre sesiones se registra brevemente en [`docs/memory/progress.md`](../memory/progress.md) cada vez que el Product Owner indique continuar.
+
 ## Orden inicial
 
 `SPEC-000` debe definir el alcance verificable de November Alpha antes de iniciar nuevas features.

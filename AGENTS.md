@@ -10,7 +10,8 @@ Antes de modificar código, el agente debe leer, en este orden:
 4. El plan relevante.
 5. Las tareas relevantes.
 6. `CONTRIBUTING.md`, `docs/team-workflow.md` y la documentación de arquitectura relacionada.
-7. El código y los tests existentes afectados.
+7. La memoria operativa relevante en `docs/memory/`.
+8. El código y los tests existentes afectados.
 
 ## Reglas de trabajo
 
@@ -45,3 +46,7 @@ November Alpha es el límite rector del trabajo actual:
 `Idea → Spec → Clarification → Human Approval → Plan → Human Approval → Tasks → Implementation → Tests → Validation → Spec ↔ Code Review → PR → main`
 
 No se genera código durante Clarification. Toda funcionalidad significativa debe tener una spec con requisitos identificados y una tabla de trazabilidad.
+
+## Memoria de continuidad
+
+Cada vez que el Product Owner indique continuar, registrar en `docs/memory/progress.md` el avance, decisiones, aprendizajes, validaciones, commit y siguiente paso. La memoria es contexto derivado y nunca puede contradecir la Constitution o una spec aprobada.

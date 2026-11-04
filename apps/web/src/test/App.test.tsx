@@ -28,6 +28,12 @@ const learningCourse = [{
 }];
 
 beforeEach(() => {
+  sessionStorage.setItem("nuvyra.auth.session", JSON.stringify({
+    email: "demo@nuvyra.local",
+    accessToken: "test-token",
+    refreshToken: "test-refresh-token",
+    expiresAt: Date.now() + 60_000,
+  }));
   vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({
     json: async () => url === "/api/learn/lessons" ? [learningLesson] : learningCourse,
   } as Response)));
@@ -70,6 +76,15 @@ function desktopNavigation() {
 }
 
 describe("App", () => {
+  it("starts the local Alpha demo without an authenticated session", () => {
+    sessionStorage.removeItem("nuvyra.auth.session");
+
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: /tu dinero merece una perspectiva más clara/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /iniciar sesión/i })).not.toBeInTheDocument();
+  });
+
   it("renders the uncalibrated home without the legacy clarity metric", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /tu dinero merece una perspectiva más clara/i })).toBeInTheDocument();

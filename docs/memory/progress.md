@@ -88,3 +88,16 @@
 - **Avance:** el cliente API conserva las métricas de Before Selling y la UI prueba que renderiza valores dinámicos distintos al caso hardcodeado.
 - **Validación:** 13 archivos frontend, 702 tests correctos y build frontend correcto.
 - **Siguiente paso:** `T029`.
+
+## 2026-11-03 — Continuidad hacia T029
+
+- **Estado:** se continúa el plan SDD después de cerrar T028.
+- **Objetivo:** probar degradación segura sin autenticación, PostgreSQL, CoinGecko ni red externa.
+- **Regla aplicada:** validar primero el comportamiento existente; cambiar producción solo si la evidencia muestra una brecha.
+
+## 2026-11-03 — T029: degradación sin servicios externos
+
+- **Estado:** completada.
+- **Avance:** se añadió regresión para iniciar la Alpha sin sesión autenticada; se conservaron las pruebas de fallback demo sin red y de CoinGecko no disponible.
+- **Validación:** 13 archivos frontend, 703 tests correctos, build frontend correcto y suite backend correcta.
+- **Siguiente paso:** `T030`.

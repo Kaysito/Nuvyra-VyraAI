@@ -162,6 +162,20 @@ describe("PracticeView", () => {
     expect(trigger).toHaveFocus();
   });
 
+  it("exposes an accessible description, close control and decision actions", async () => {
+    render(<PracticeHarness />);
+    const { trigger } = await openIntervention();
+    const dialog = screen.getByRole("dialog", { name: /estás viendo una pérdida rápida/i });
+
+    expect(dialog).toHaveAttribute("aria-describedby", "intervention-description");
+    expect(screen.getByText(/vender sigue siendo tu decisión/i)).toHaveAttribute("id", "intervention-description");
+    expect(screen.getByRole("button", { name: /cerrar pausa/i })).toHaveFocus();
+    expect(screen.getByRole("button", { name: /esperar 24 horas/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /revisar contexto/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /continuar con la venta/i })).toBeEnabled();
+    expect(trigger).not.toHaveFocus();
+  });
+
   it("shows live market data and isolates it from the sandbox crash", async () => {
     render(<PracticeHarness
       mode="market"

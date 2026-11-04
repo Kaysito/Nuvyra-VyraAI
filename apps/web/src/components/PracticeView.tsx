@@ -410,6 +410,7 @@ function Intervention({
     ref={dialog}
     className="glass-card intervention-modal native-dialog"
     aria-labelledby="intervention-title"
+    aria-describedby="intervention-description"
     onCancel={onClose}
   >
     <section>
@@ -417,7 +418,7 @@ function Intervention({
       <div className="pause-mark" aria-hidden="true"><span>Ⅱ</span></div>
       <p className="overline">PAUSA INTENCIONAL</p>
       <h2 id="intervention-title">Estás viendo una pérdida rápida, no toda la historia.</h2>
-      <p>Vender sigue siendo tu decisión. Antes, contrasta el movimiento con el plan que definiste.</p>
+      <p id="intervention-description">Vender sigue siendo tu decisión. Antes, contrasta el movimiento con el plan que definiste.</p>
       <div className="intervention-metrics">
         <div><span>Movimiento</span><strong className="negative">{formatSignedPercent(intervention?.currentLossPercent ?? 0)}</strong></div>
         <div><span>Volatilidad</span><strong>{volatilityLabel(intervention?.volatilityScore ?? 0)}</strong></div>

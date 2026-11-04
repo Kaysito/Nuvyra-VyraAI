@@ -34,7 +34,6 @@ describe("apiClient", () => {
 
     expect(fetchMock).toHaveBeenCalledWith("/api/profiles/assessment", expect.objectContaining({
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         experience: "beginner",
         riskDisposition: "medium",
@@ -43,6 +42,8 @@ describe("apiClient", () => {
         pressureResponse: "pauseAndReview",
       }),
     }));
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(new Headers(request.headers).get("Content-Type")).toBe("application/json");
   });
 
   it("uses the sandbox decision endpoints with explicit JSON contracts", async () => {
@@ -71,6 +72,29 @@ describe("apiClient", () => {
       method: "POST", body: JSON.stringify({ choice: "ReviewEvidence" }),
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(5, "/api/demo/reset", expect.objectContaining({ method: "POST" }));
+  });
+
+  it("preserves authoritative Before Selling metrics from the API", async () => {
+    const intervention = {
+      id: "decision-2",
+      symbol: "ETH",
+      currentLossPercent: -17.5,
+      volatilityScore: 66,
+      explanation: "Contrasta el movimiento con tu plan.",
+      observedSignals: ["sharpDrop"],
+      scenarios: [{ code: "sellHalf", cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100 }],
+      alternatives: ["Wait24Hours", "ReviewEvidence", "ContinueSale"],
+      choice: null,
+      createdAt: "2026-11-03T00:00:00Z",
+    };
+    const fetchMock = vi.fn().mockResolvedValue(response(intervention));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiClient.beforeSell("ETH")).resolves.toMatchObject({
+      currentLossPercent: -17.5,
+      volatilityScore: 66,
+      scenarios: [{ cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100 }],
+    });
   });
 
   it("normalizes API errors without exposing implementation details", async () => {

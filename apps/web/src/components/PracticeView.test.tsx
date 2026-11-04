@@ -122,6 +122,7 @@ describe("PracticeView", () => {
     expect(screen.getByText("Vender 50 %")).toBeInTheDocument();
     expect(screen.getAllByText("$250.00")).toHaveLength(2);
     expect(screen.getByText("−17.5%")).toBeInTheDocument();
+    expect(screen.queryByText("−28.0%", { selector: "dialog *" })).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/¿cambió tu objetivo/i)).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: /revisar contexto/i }));

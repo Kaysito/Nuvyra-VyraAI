@@ -75,3 +75,16 @@
 - **Validación:** 701 tests frontend y build correctos.
 - **Commit:** `83216bf`.
 - **Siguiente paso:** `T028`.
+
+## 2026-11-03 — Continuidad hacia T028
+
+- **Estado:** se retoma el plan SDD tras establecer la memoria operativa.
+- **Objetivo:** añadir regresiones que impidan duplicar escenarios o divergir de los valores de la API.
+- **Regla aplicada:** implementar solo `T028`, validar y registrar el resultado antes de continuar.
+
+## 2026-11-03 — T028: regresiones de autoridad API/UI
+
+- **Estado:** completada.
+- **Avance:** el cliente API conserva las métricas de Before Selling y la UI prueba que renderiza valores dinámicos distintos al caso hardcodeado.
+- **Validación:** 13 archivos frontend, 702 tests correctos y build frontend correcto.
+- **Siguiente paso:** `T029`.

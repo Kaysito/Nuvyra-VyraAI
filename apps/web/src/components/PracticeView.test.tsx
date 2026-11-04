@@ -51,14 +51,14 @@ beforeEach(() => {
     json: () => Promise.resolve(url === "/api/decisions/before-sell" ? {
       id: "intervention-1",
       symbol: "ETH",
-      currentLossPercent: -28,
-      volatilityScore: 96,
+      currentLossPercent: -17.5,
+      volatilityScore: 66,
       explanation: "Contrasta el movimiento con tu plan.",
       observedSignals: ["sharpDrop", "positionAtLoss", "fullLiquidationIntent"],
       scenarios: [
-        { code: "sellAll", label: "Vender todo", cashReleased: 720, remainingExposure: 0, profitLossRecognized: -280, context: "Convierte toda la posición virtual en efectivo." },
-        { code: "sellHalf", label: "Vender 50 %", cashReleased: 360, remainingExposure: 360, profitLossRecognized: -140, context: "Reduce la exposición y mantiene la mitad." },
-        { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 720, profitLossRecognized: 0, context: "Conserva la exposición completa." },
+        { code: "sellAll", label: "Vender todo", cashReleased: 500, remainingExposure: 0, profitLossRecognized: -200, context: "Convierte toda la posición virtual en efectivo." },
+        { code: "sellHalf", label: "Vender 50 %", cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100, context: "Reduce la exposición y mantiene la mitad." },
+        { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 500, profitLossRecognized: 0, context: "Conserva la exposición completa." },
       ],
       alternatives: ["Wait24Hours", "ReviewEvidence", "ContinueSale"],
       choice: null,
@@ -115,12 +115,13 @@ describe("PracticeView", () => {
 
     expect(screen.getByRole("dialog", { name: /estás viendo una pérdida rápida/i })).toBeInTheDocument();
     expect(screen.getAllByText("Largo plazo").length).toBeGreaterThan(0);
-    expect(screen.getByText("Muy elevada")).toBeInTheDocument();
+    expect(screen.getByText("Elevada")).toBeInTheDocument();
     expect(screen.getByText("Nuvyra explica y contextualiza. Tú decides.")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: /alternativas de venta/i })).toBeInTheDocument();
     expect(screen.getByText("Tres caminos, sin predicciones")).toBeInTheDocument();
     expect(screen.getByText("Vender 50 %")).toBeInTheDocument();
-    expect(screen.getAllByText("$360.00")).toHaveLength(2);
+    expect(screen.getAllByText("$250.00")).toHaveLength(2);
+    expect(screen.getByText("−17.5%")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/¿cambió tu objetivo/i)).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: /revisar contexto/i }));

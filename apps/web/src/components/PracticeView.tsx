@@ -7,7 +7,7 @@ import {
   getRiskDispositionLabel,
 } from "../pulse/pulsePresentation";
 import { apiClient, type DecisionScenarioResponse, type InterventionResponse, type QuoteResponse, type VyraInsightResponse } from "../services/apiClient";
-import { addJourneyEvent, localDecisionScenarios, type PracticeAssetSymbol, type PracticeDecision, type PracticeEvent, type PracticeSession } from "./practiceSession";
+import { addJourneyEvent, type PracticeAssetSymbol, type PracticeDecision, type PracticeEvent, type PracticeSession } from "./practiceSession";
 
 type PracticeAsset = {
   symbol: PracticeAssetSymbol;
@@ -275,7 +275,7 @@ export function PracticeView({
       horizon={horizon}
       insight={insight}
       insightState={insightState}
-      scenarios={interventionData?.scenarios ?? localDecisionScenarios()}
+      scenarios={interventionData?.scenarios ?? []}
       returnFocusRef={interventionTrigger}
       onClose={() => setIntervention(false)}
       onChoose={value => {

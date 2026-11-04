@@ -1,5 +1,3 @@
-import type { DecisionScenarioResponse } from "../services/apiClient";
-
 export type PracticeAssetSymbol = "BTC" | "ETH" | "SOL";
 export type PracticeDecision = "wait24Hours" | "reviewEvidence" | "continueSale";
 export type PracticeEventCode = "positionCreated" | "crashObserved" | "contextReviewed" | "decisionRecorded";
@@ -31,10 +29,3 @@ export function addJourneyEvent(session: PracticeSession, event: Omit<PracticeEv
   };
 }
 
-export function localDecisionScenarios(): DecisionScenarioResponse[] {
-  return [
-    { code: "sellAll", label: "Vender todo", cashReleased: 720, remainingExposure: 0, profitLossRecognized: -280, context: "Convierte toda la posición virtual en efectivo y reconoce la pérdida del escenario." },
-    { code: "sellHalf", label: "Vender 50 %", cashReleased: 360, remainingExposure: 360, profitLossRecognized: -140, context: "Reduce la exposición y mantiene la mitad de la posición virtual." },
-    { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 720, profitLossRecognized: 0, context: "Conserva la exposición completa; la pérdida continúa sin realizarse." },
-  ];
-}

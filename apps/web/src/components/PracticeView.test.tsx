@@ -9,7 +9,6 @@ import {
 import {
   INITIAL_PRACTICE_SESSION,
   addJourneyEvent,
-  localDecisionScenarios,
   type PracticeSession,
 } from "./practiceSession";
 
@@ -49,7 +48,21 @@ async function openIntervention() {
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({
     ok: true,
-    json: () => Promise.resolve(url === "/api/guide/insights" ? {
+    json: () => Promise.resolve(url === "/api/decisions/before-sell" ? {
+      id: "intervention-1",
+      symbol: "ETH",
+      currentLossPercent: -28,
+      explanation: "Contrasta el movimiento con tu plan.",
+      observedSignals: ["sharpDrop", "positionAtLoss", "fullLiquidationIntent"],
+      scenarios: [
+        { code: "sellAll", label: "Vender todo", cashReleased: 720, remainingExposure: 0, profitLossRecognized: -280, context: "Convierte toda la posición virtual en efectivo." },
+        { code: "sellHalf", label: "Vender 50 %", cashReleased: 360, remainingExposure: 360, profitLossRecognized: -140, context: "Reduce la exposición y mantiene la mitad." },
+        { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 720, profitLossRecognized: 0, context: "Conserva la exposición completa." },
+      ],
+      alternatives: ["Wait24Hours", "ReviewEvidence", "ContinueSale"],
+      choice: null,
+      createdAt: "2026-09-11T12:00:00Z",
+    } : url === "/api/guide/insights" ? {
       id: "insight-1",
       title: "Revisa el contexto antes de decidir",
       observation: "VyraAI observó el movimiento del activo.",
@@ -75,14 +88,6 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("PracticeView", () => {
-  it("compares deterministic sell consequences without forecasting", () => {
-    const scenarios = localDecisionScenarios();
-    expect(scenarios.map(item => item.code)).toEqual(["sellAll", "sellHalf", "hold"]);
-    expect(scenarios.find(item => item.code === "sellAll")?.remainingExposure).toBe(0);
-    expect(scenarios.find(item => item.code === "sellHalf")?.cashReleased).toBe(360);
-    expect(scenarios.find(item => item.code === "hold")?.profitLossRecognized).toBe(0);
-  });
-
   it("records each educational journey milestone only once without awarding context points", () => {
     const event = { code: "contextReviewed" as const, title: "Contexto revisado", detail: "Comparaste alternativas.", points: 0 };
     const first = addJourneyEvent(INITIAL_PRACTICE_SESSION, event);
@@ -112,6 +117,7 @@ describe("PracticeView", () => {
     expect(screen.getByRole("group", { name: /alternativas de venta/i })).toBeInTheDocument();
     expect(screen.getByText("Tres caminos, sin predicciones")).toBeInTheDocument();
     expect(screen.getByText("Vender 50 %")).toBeInTheDocument();
+    expect(screen.getAllByText("$360.00")).toHaveLength(2);
     await waitFor(() => expect(screen.getByText(/¿cambió tu objetivo/i)).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: /revisar contexto/i }));

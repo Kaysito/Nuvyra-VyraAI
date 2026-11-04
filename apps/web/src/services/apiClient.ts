@@ -41,6 +41,7 @@ export type DecisionScenarioResponse = {
   remainingExposure: number;
   profitLossRecognized: number;
   context: string;
+  provenance: DataProvenance;
 };
 
 export type InterventionResponse = {

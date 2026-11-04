@@ -101,3 +101,16 @@
 - **Avance:** se añadió regresión para iniciar la Alpha sin sesión autenticada; se conservaron las pruebas de fallback demo sin red y de CoinGecko no disponible.
 - **Validación:** 13 archivos frontend, 703 tests correctos, build frontend correcto y suite backend correcta.
 - **Siguiente paso:** `T030`.
+
+## 2026-11-03 — Continuidad hacia T030
+
+- **Estado:** se continúa el plan SDD después de cerrar T029.
+- **Objetivo:** verificar proveniencia y etiquetado de cotizaciones, escenarios y respuestas de Vyra.
+- **Regla aplicada:** los tests deben proteger los contratos constitucionales sin introducir nuevas funcionalidades.
+
+## 2026-11-03 — T030: tests de proveniencia
+
+- **Estado:** completada.
+- **Avance:** los escenarios de Before Selling incluyen `SYSTEM_CALCULATED` y la suite verifica proveniencia simulada, externa y calculada.
+- **Validación:** backend compila y pasa su suite; frontend tiene 703 tests correctos y build correcto.
+- **Siguiente paso:** `T031`.

@@ -129,6 +129,8 @@ var checks = new (string Name, Action Run)[]
             "Selling half must release half of the crashed position value.");
         Ensure(intervention.Scenarios.Single(item => item.Code == "hold").ProfitLossRecognized == 0m,
             "Holding must not recognize a virtual result.");
+        Ensure(intervention.Scenarios.All(item => item.Provenance == DataProvenance.SystemCalculated),
+            "Before sell scenarios must identify system-calculated provenance.");
         Ensure(intervention.ObservedSignals.Contains("sharpDrop") && intervention.ObservedSignals.Contains("positionAtLoss"),
             "The intervention must expose observable facts instead of an inferred emotion.");
     }),

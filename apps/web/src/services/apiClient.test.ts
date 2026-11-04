@@ -82,7 +82,7 @@ describe("apiClient", () => {
       volatilityScore: 66,
       explanation: "Contrasta el movimiento con tu plan.",
       observedSignals: ["sharpDrop"],
-      scenarios: [{ code: "sellHalf", cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100 }],
+      scenarios: [{ code: "sellHalf", cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100, provenance: "SYSTEM_CALCULATED" }],
       alternatives: ["Wait24Hours", "ReviewEvidence", "ContinueSale"],
       choice: null,
       createdAt: "2026-11-03T00:00:00Z",
@@ -117,4 +117,5 @@ describe("apiClient", () => {
 
     await expect(apiClient.getHealth()).rejects.toMatchObject({ status: 0, code: "network_error" });
   });
+
 });

@@ -56,9 +56,9 @@ beforeEach(() => {
       explanation: "Contrasta el movimiento con tu plan.",
       observedSignals: ["sharpDrop", "positionAtLoss", "fullLiquidationIntent"],
       scenarios: [
-        { code: "sellAll", label: "Vender todo", cashReleased: 500, remainingExposure: 0, profitLossRecognized: -200, context: "Convierte toda la posición virtual en efectivo." },
-        { code: "sellHalf", label: "Vender 50 %", cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100, context: "Reduce la exposición y mantiene la mitad." },
-        { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 500, profitLossRecognized: 0, context: "Conserva la exposición completa." },
+        { code: "sellAll", label: "Vender todo", cashReleased: 500, remainingExposure: 0, profitLossRecognized: -200, context: "Convierte toda la posición virtual en efectivo.", provenance: "SYSTEM_CALCULATED" },
+        { code: "sellHalf", label: "Vender 50 %", cashReleased: 250, remainingExposure: 250, profitLossRecognized: -100, context: "Reduce la exposición y mantiene la mitad.", provenance: "SYSTEM_CALCULATED" },
+        { code: "hold", label: "Mantener", cashReleased: 0, remainingExposure: 500, profitLossRecognized: 0, context: "Conserva la exposición completa.", provenance: "SYSTEM_CALCULATED" },
       ],
       alternatives: ["Wait24Hours", "ReviewEvidence", "ContinueSale"],
       choice: null,

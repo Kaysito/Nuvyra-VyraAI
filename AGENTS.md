@@ -14,6 +14,7 @@ Antes de modificar código, el agente debe leer, en este orden:
 
 ## Reglas de trabajo
 
+- La Constitution es la autoridad normativa superior del repositorio; ninguna spec, ADR, plan, tarea, implementación o documentación puede contradecirla.
 - Entender antes de modificar.
 - Hacer el cambio mínimo necesario.
 - No implementar requisitos inexistentes ni inventar reglas de negocio.
